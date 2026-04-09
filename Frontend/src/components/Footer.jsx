@@ -1,113 +1,87 @@
 import { Link } from "react-router-dom";
+import Button from "./Button";
 
 export default function Footer() {
-  const year = new Date().getFullYear();
-
-  const quickLinks = [
-    { label: "Inicio", to: "/" },
-    { label: "Portafolio", to: "/portafolio" },
-    { label: "Contacto", to: "/contacto" },
-    { label: "Admin", to: "/admin" },
-  ];
-
   return (
-    <footer className="border-t border-slate-200 bg-slate-50">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-6 py-12 lg:grid-cols-3">
-          {/* Brand card */}
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-start gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-50 ring-1 ring-slate-200 shadow-sm">
-                <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_6px_rgba(34,211,238,0.15)]" />
+      <footer className="border-t border-slate-200 bg-slate-50">
+        <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 md:grid-cols-3 lg:px-8">
+          <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+            <div className="mb-4 flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-50 ring-1 ring-slate-200">
+                <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_6px_rgba(34,211,238,0.12)]" />
               </div>
+
               <div>
-                <p className="text-base font-semibold tracking-tight text-blue-600">
+                <p className="text-lg font-semibold tracking-tight text-blue-600">
                   Soyuz
                 </p>
-                <p className="mt-1 text-sm text-slate-600">
-                  Automatización y desarrollo web con estética corporativa y
-                  ejecución limpia.
+                <p className="text-sm text-slate-600">
+                  Automatización y desarrollo web con estética corporativa y ejecución limpia.
                 </p>
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-2">
-              {["Bento Grid", "SaaS moderno", "Ingeniería limpia"].map((t) => (
-                <span
-                  key={t}
-                  className="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
-                  {t}
-                </span>
-              ))}
+            <div className="flex flex-wrap gap-2 text-xs text-slate-600">
+            <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
+              Bento Grid
+            </span>
+              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
+              SaaS moderno
+            </span>
+              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
+              Ingeniería limpia
+            </span>
             </div>
           </div>
 
-          {/* Links card */}
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <p className="text-sm font-semibold text-slate-900">Enlaces</p>
-            <ul className="mt-4 grid gap-2">
-              {quickLinks.map((l) => (
-                <li key={l.label}>
-                  <Link
-                    to={l.to}
-                    className="group inline-flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
-                  >
-                    <span>{l.label}</span>
-                    <span className="text-slate-400 transition group-hover:text-blue-600">
-                      →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-900">
+              Enlaces
+            </h3>
+
+            <nav className="grid gap-3 text-sm">
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/">
+                Inicio
+              </Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/portafolio">
+                Portafolio
+              </Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/contacto">
+                Contacto
+              </Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/login">
+                Iniciar sesión
+              </Link>
+            </nav>
           </div>
 
-          {/* Contact card */}
-          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-            <p className="text-sm font-semibold text-slate-900">Contacto</p>
+          <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+            <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-900">
+              Contacto
+            </h3>
 
-            <div className="mt-4 grid gap-3">
-              <a
-                href="mailto:contacto@soyuz.dev"
-                className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
-              >
-                <span className="block text-xs font-medium text-slate-500">
-                  Email
-                </span>
-                <span className="block font-semibold">contacto@soyuz.dev</span>
-              </a>
+            <div className="space-y-3 text-sm text-slate-700">
+              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Email</p>
+                <p className="mt-1 font-medium">contacto@soyuz.dev</p>
+              </div>
 
-              <a
-                href="https://wa.me/5214642072356"
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
-              >
-                <span className="block text-xs font-medium text-slate-500">
-                  WhatsApp
-                </span>
-                <span className="block font-semibold">+52 1 464 207 2356</span>
-              </a>
+              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                <p className="text-xs uppercase tracking-wide text-slate-500">WhatsApp</p>
+                <p className="mt-1 font-medium">+52 1 464 207 2356</p>
+              </div>
             </div>
 
-            <Link
-              to="/contacto"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
-            >
+            <Button as={Link} to="/contacto" variant="primary" className="mt-5 w-full">
               Cotizar proyecto
-            </Link>
+            </Button>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 border-t border-slate-200 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-slate-600">© {year} Soyuz.</p>
-          <p className="text-xs text-slate-500">
-            SaaS corporativo • Bento Grid • Tailwind CSS
-          </p>
+        <div className="mx-auto flex max-w-7xl items-center justify-between border-t border-slate-200 px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
+          <p>© 2026 Soyuz</p>
+          <p>SaaS corporativo · Bento Grid · Tailwind CSS</p>
         </div>
-      </div>
-    </footer>
+      </footer>
   );
 }

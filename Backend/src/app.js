@@ -17,6 +17,8 @@ const { health, ready } = require("./controllers/healthController");
 const contactRoutes = require("./routes/contactRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const clientRoutes = require("./routes/clientRoutes");
+const publicRoutes = require("./routes/publicRoutes");
 
 const app = express();
 
@@ -42,6 +44,8 @@ app.get("/api/ready", ready);
 app.use("/api/contact", contactBurstLimiter, contactLimiter, contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/client", clientRoutes);
+app.use("/api/public", publicRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

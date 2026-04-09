@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     container_name: soyuz-db
     restart: unless-stopped
     environment:
@@ -33,6 +33,10 @@ services:
     command: sh -c "npm run migrate:up && npm start"
     ports:
       - "4000:4000"
+    volumes:
+      # Volumen persistente para archivos entregables subidos por el admin.
+      # Los archivos sobreviven reinicios y rebuilds del contenedor.
+      - uploads_data:/app/uploads/deliverables
     healthcheck:
       test:
         [
@@ -48,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  uploads_data:
