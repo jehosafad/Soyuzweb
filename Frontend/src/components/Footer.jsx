@@ -7,8 +7,8 @@ export default function Footer() {
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:px-6 md:grid-cols-3 lg:px-8">
           <div className="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
             <div className="mb-4 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-50 ring-1 ring-slate-200">
-                <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_6px_rgba(34,211,238,0.12)]" />
+              <div className="grid h-10 w-10 place-items-center rounded-2xl overflow-hidden ring-1 ring-slate-200">
+                <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
               </div>
               <div>
                 <p className="text-lg font-semibold tracking-tight text-blue-600">Soyuz</p>

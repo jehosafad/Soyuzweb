@@ -36,7 +36,6 @@ router.get("/portfolio", async (req, res, next) => {
         WHERE pm.project_id = p.id
       ) media ON TRUE
       WHERE p.is_public = true
-        AND p.status IN ('deployed', 'delivered')
       ORDER BY p.updated_at DESC, p.id DESC
       LIMIT 50
     `);
@@ -48,6 +47,24 @@ router.get("/portfolio", async (req, res, next) => {
     } catch (err) {
         return next(err);
     }
+});
+
+/**
+ * GET /api/public/paypal-config
+ * Devuelve el Client ID de PayPal para el SDK del frontend.
+ */
+router.get("/paypal-config", (req, res) => {
+    const clientId = process.env.PAYPAL_CLIENT_ID || "";
+    const mode = process.env.PAYPAL_MODE || "sandbox";
+
+    return res.status(200).json({
+        ok: true,
+        data: {
+            clientId,
+            mode,
+            enabled: Boolean(clientId),
+        },
+    });
 });
 
 module.exports = router;

@@ -232,6 +232,12 @@ export default function AdminDashboard() {
     const [deletingFileId, setDeletingFileId] = useState(null);
     const [downloadingFileId, setDownloadingFileId] = useState(null);
 
+    // ── Stats y Cliente expandido ──────────────────────────────────────────
+    const [adminStats, setAdminStats] = useState(null);
+    const [expandedClientId, setExpandedClientId] = useState(null);
+    const [expandedLeadId, setExpandedLeadId] = useState(null);
+    const [expandedTicketId, setExpandedTicketId] = useState(null);
+
     // ── Sprint 12: Portafolio público ────────────────────────────────────────
     const [portfolioTogglingId, setPortfolioTogglingId] = useState(null);
 
@@ -435,6 +441,17 @@ export default function AdminDashboard() {
             });
 
             setStatus("success");
+
+            // Stats en segundo plano
+            try {
+                const statsResp = await fetch("/api/admin/stats", {
+                    headers: { Authorization: `Bearer ${session.token}` },
+                });
+                if (statsResp.ok) {
+                    const sj = await statsResp.json();
+                    if (sj?.data) setAdminStats(sj.data);
+                }
+            } catch {}
         } catch (err) {
             setError(err.message || "No se pudo cargar el panel.");
             setStatus("error");
@@ -903,9 +920,25 @@ export default function AdminDashboard() {
 
     return (
         <main className="min-h-screen bg-slate-50">
+            {/* ── Top nav ──────────────────────────────────────────── */}
+            <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
+                <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <a href="/" className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+                        <span className="grid h-8 w-8 place-items-center rounded-xl overflow-hidden bg-slate-50 ring-1 ring-slate-200">
+                            <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
+                        </span>
+                        Soyuz
+                    </a>
+                    <div className="flex items-center gap-3">
+                        <a href="/" className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50">Ir al sitio web</a>
+                        <button onClick={() => { clearSession(); window.location.replace("/login"); }} className="rounded-xl px-3 py-1.5 text-xs font-medium text-red-600 ring-1 ring-red-200 transition hover:bg-red-50">Cerrar sesión</button>
+                    </div>
+                </div>
+            </nav>
+
             <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
                 <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">
                                 Soyuz CRM
@@ -917,16 +950,6 @@ export default function AdminDashboard() {
                                 ¡Bienvenido, jefe! 👨‍💻
                             </p>
                         </div>
-
-                        <button
-                            onClick={() => {
-                                clearSession();
-                                window.location.replace("/login");
-                            }}
-                            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-blue-600 ring-1 ring-slate-200 transition hover:bg-slate-50"
-                        >
-                            Cerrar sesión
-                        </button>
                     </div>
 
                     <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
@@ -999,81 +1022,87 @@ export default function AdminDashboard() {
                                             description="Cuando recibas mensajes del sitio, aparecerán aquí."
                                         />
                                     ) : (
-                                        <div className="space-y-4">
-                                            {leads.map((lead) => (
-                                                <article
-                                                    key={lead.id}
-                                                    className="rounded-2xl bg-white p-5 ring-1 ring-slate-200"
-                                                >
-                                                    <div className="flex flex-col gap-2">
-                                                        <p className="text-sm font-semibold text-slate-900">
-                                                            {lead.subject || "Sin asunto"}
-                                                        </p>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <StatusBadge>{lead.name || "Sin nombre"}</StatusBadge>
-                                                            <StatusBadge>{lead.email}</StatusBadge>
-                                                            <StatusBadge>{formatDate(lead.created_at)}</StatusBadge>
-                                                            <StatusBadge>{toReadableStatus(lead.admin_status)}</StatusBadge>
-                                                        </div>
-                                                    </div>
-
-                                                    <p className="mt-3 text-sm leading-6 text-slate-600">
-                                                        {lead.message || "Sin mensaje."}
-                                                    </p>
-
-                                                    <div className="mt-4 space-y-3">
-                                                        <select
-                                                            value={leadDrafts[lead.id]?.adminStatus ?? lead.admin_status ?? "open"}
-                                                            onChange={(event) =>
-                                                                setLeadDrafts((prev) => ({
-                                                                    ...prev,
-                                                                    [lead.id]: {
-                                                                        ...(prev[lead.id] || {
-                                                                            adminStatus: lead.admin_status || "open",
-                                                                            adminNote: lead.admin_note || "",
-                                                                        }),
-                                                                        adminStatus: event.target.value,
-                                                                    },
-                                                                }))
-                                                            }
-                                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                        >
-                                                            <option value="open">Abierto</option>
-                                                            <option value="archived">Archivado</option>
-                                                            <option value="censored">Censurado</option>
-                                                            <option value="deleted">Eliminado</option>
-                                                        </select>
-
-                                                        <textarea
-                                                            rows={3}
-                                                            value={leadDrafts[lead.id]?.adminNote ?? lead.admin_note ?? ""}
-                                                            onChange={(event) =>
-                                                                setLeadDrafts((prev) => ({
-                                                                    ...prev,
-                                                                    [lead.id]: {
-                                                                        ...(prev[lead.id] || {
-                                                                            adminStatus: lead.admin_status || "open",
-                                                                            adminNote: lead.admin_note || "",
-                                                                        }),
-                                                                        adminNote: event.target.value,
-                                                                    },
-                                                                }))
-                                                            }
-                                                            placeholder="Nota administrativa interna"
-                                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
-                                                        />
-
-                                                        <button
-                                                            type="button"
-                                                            disabled={savingId === `lead-${lead.id}`}
-                                                            onClick={() => handleLeadSave(lead.id)}
-                                                            className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                                                        >
-                                                            {savingId === `lead-${lead.id}` ? "Guardando..." : "Guardar lead"}
+                                        <div className="space-y-2">
+                                            {leads.map((lead) => {
+                                                const isOpen = expandedLeadId === lead.id;
+                                                return (
+                                                    <div key={lead.id} className="rounded-2xl ring-1 ring-slate-200 overflow-hidden">
+                                                        <button type="button" onClick={() => setExpandedLeadId(isOpen ? null : lead.id)}
+                                                                className="flex w-full items-center justify-between bg-white px-4 py-3 text-left transition hover:bg-slate-50">
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold text-slate-900 truncate">{lead.subject || "Sin asunto"}</p>
+                                                                <p className="text-xs text-slate-500">{lead.name} · {lead.email} · {formatDate(lead.created_at)}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <StatusBadge>{toReadableStatus(lead.admin_status)}</StatusBadge>
+                                                                <span className="text-xs text-slate-400">{isOpen ? "▲" : "▼"}</span>
+                                                            </div>
                                                         </button>
+                                                        {isOpen && (
+                                                            <div className="border-t border-slate-100 bg-slate-50 p-4 space-y-3">
+                                                                <p className="text-sm text-slate-600">{lead.message || "Sin mensaje."}</p>
+
+                                                                <select
+                                                                    value={leadDrafts[lead.id]?.adminStatus ?? lead.admin_status ?? "open"}
+                                                                    onChange={(e) => setLeadDrafts((prev) => ({
+                                                                        ...prev, [lead.id]: { ...(prev[lead.id] || { adminStatus: lead.admin_status || "open", adminNote: lead.admin_note || "" }), adminStatus: e.target.value },
+                                                                    }))}
+                                                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                                                >
+                                                                    <option value="open">Abierto</option>
+                                                                    <option value="archived">Archivado</option>
+                                                                    <option value="censored">Censurado</option>
+                                                                    <option value="deleted">Eliminado</option>
+                                                                </select>
+
+                                                                <textarea rows={2}
+                                                                          value={leadDrafts[lead.id]?.adminNote ?? lead.admin_note ?? ""}
+                                                                          onChange={(e) => setLeadDrafts((prev) => ({
+                                                                              ...prev, [lead.id]: { ...(prev[lead.id] || { adminStatus: lead.admin_status || "open", adminNote: lead.admin_note || "" }), adminNote: e.target.value },
+                                                                          }))}
+                                                                          placeholder="Nota interna"
+                                                                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                                                />
+
+                                                                <div className="flex gap-2">
+                                                                    <button type="button" disabled={savingId === `lead-${lead.id}`}
+                                                                            onClick={async () => { await handleLeadSave(lead.id); setExpandedLeadId(null); }}
+                                                                            className="rounded-xl bg-slate-200 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-300 disabled:opacity-50">
+                                                                        {savingId === `lead-${lead.id}` ? "Guardando..." : "Guardar nota"}
+                                                                    </button>
+
+                                                                    {lead.admin_status !== "archived" && (
+                                                                        <button type="button" disabled={savingId === `accept-${lead.id}`}
+                                                                                onClick={async () => {
+                                                                                    setSavingId(`accept-${lead.id}`);
+                                                                                    setActionError(""); setActionSuccess("");
+                                                                                    try {
+                                                                                        const resp = await fetch(`/api/admin/leads/${lead.id}/accept`, {
+                                                                                            method: "POST",
+                                                                                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.token}` },
+                                                                                            body: JSON.stringify({ adminNote: leadDrafts[lead.id]?.adminNote || "" }),
+                                                                                        });
+                                                                                        const data = await resp.json();
+                                                                                        if (resp.ok) {
+                                                                                            setActionSuccess(data?.message || "Proyecto creado.");
+                                                                                            setExpandedLeadId(null);
+                                                                                            await loadAllData();
+                                                                                        } else {
+                                                                                            setActionError(data?.message || "No se pudo aceptar.");
+                                                                                        }
+                                                                                    } catch { setActionError("Error de conexión."); }
+                                                                                    setSavingId(null);
+                                                                                }}
+                                                                                className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                                                                            {savingId === `accept-${lead.id}` ? "Creando..." : "✓ Aceptar proyecto"}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </article>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </SectionCard>
@@ -1089,129 +1118,144 @@ export default function AdminDashboard() {
                                             description="Cuando un cliente cree una solicitud desde su portal, aparecerá aquí."
                                         />
                                     ) : (
-                                        <div className="space-y-4">
-                                            {tickets.map((item) => (
-                                                <article
-                                                    key={item.id}
-                                                    className="rounded-2xl bg-white p-5 ring-1 ring-slate-200"
-                                                >
-                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-slate-900">
-                                                                {item.summary}
-                                                            </p>
-                                                            <p className="mt-1 text-sm text-slate-600">
-                                                                {item.details || "Sin detalle adicional."}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <StatusBadge>{toReadableStatus(item.status)}</StatusBadge>
-                                                            <StatusBadge>{formatDate(item.created_at)}</StatusBadge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Cliente
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {item.user_email || "—"}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Proyecto
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {item.project_name || "Sin proyecto vinculado"}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Usuario
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                #{item.user_id}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    {item.admin_response ? (
-                                                        <div className="mt-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Respuesta interna enviada
-                                                            </p>
-                                                            <p className="mt-2 text-sm text-slate-700">{item.admin_response}</p>
-                                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                                <StatusBadge>
-                                                                    Respondido: {formatDate(item.responded_at)}
-                                                                </StatusBadge>
-                                                                <StatusBadge>
-                                                                    Por: {item.responded_by_email || "admin"}
-                                                                </StatusBadge>
+                                        <div className="space-y-2">
+                                            {tickets.map((item) => {
+                                                const isTicketOpen = expandedTicketId === item.id;
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        className="rounded-2xl ring-1 ring-slate-200 overflow-hidden"
+                                                    >
+                                                        <button type="button" onClick={() => setExpandedTicketId(isTicketOpen ? null : item.id)}
+                                                                className="flex w-full items-center justify-between bg-white px-4 py-3 text-left transition hover:bg-slate-50">
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold text-slate-900 truncate">{item.summary}</p>
+                                                                <p className="text-xs text-slate-500">{item.user_email} · {formatDate(item.created_at)}</p>
                                                             </div>
-                                                        </div>
-                                                    ) : null}
+                                                            <div className="flex items-center gap-2 shrink-0">
+                                                                <StatusBadge>{toReadableStatus(item.status)}</StatusBadge>
+                                                                <span className="text-xs text-slate-400">{isTicketOpen ? "▲" : "▼"}</span>
+                                                            </div>
+                                                        </button>
+                                                        {isTicketOpen && (
+                                                            <div className="border-t border-slate-100 bg-slate-50 p-5">
+                                                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                                    <div>
+                                                                        <p className="text-sm font-semibold text-slate-900">
+                                                                            {item.summary}
+                                                                        </p>
+                                                                        <p className="mt-1 text-sm text-slate-600">
+                                                                            {item.details || "Sin detalle adicional."}
+                                                                        </p>
+                                                                    </div>
 
-                                                    {item.latest_quote_id ? (
-                                                        <div className="mt-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Última cotización asociada
-                                                            </p>
-                                                            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                                <p className="text-sm font-semibold text-slate-900">
-                                                                    {item.latest_quote_title}
-                                                                </p>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    <StatusBadge>{item.latest_quote_status}</StatusBadge>
-                                                                    <StatusBadge>
-                                                                        {formatMoney(
-                                                                            item.latest_quote_amount_cents,
-                                                                            item.latest_quote_currency
-                                                                        )}
-                                                                    </StatusBadge>
-                                                                    <StatusBadge>
-                                                                        Expira: {formatDate(item.latest_quote_expires_at)}
-                                                                    </StatusBadge>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        <StatusBadge>{toReadableStatus(item.status)}</StatusBadge>
+                                                                        <StatusBadge>{formatDate(item.created_at)}</StatusBadge>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
-                                                    ) : null}
 
-                                                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                                                        <label className="text-sm font-medium text-slate-700">
-                                                            Cambiar estado
-                                                        </label>
+                                                                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                                                    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                                                                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                                            Cliente
+                                                                        </p>
+                                                                        <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                            {item.user_email || "—"}
+                                                                        </p>
+                                                                    </div>
 
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {["open", "pending", "resolved"].map((nextStatus) => (
-                                                                <button
-                                                                    key={nextStatus}
-                                                                    type="button"
-                                                                    disabled={
-                                                                        savingId === `ticket-status-${item.id}` ||
-                                                                        item.status === nextStatus
-                                                                    }
-                                                                    onClick={() => handleStatusChange(item.id, nextStatus)}
-                                                                    className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                                                                >
-                                                                    {toReadableStatus(nextStatus)}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
+                                                                    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                                                                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                                            Proyecto
+                                                                        </p>
+                                                                        <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                            {item.project_name || "Sin proyecto vinculado"}
+                                                                        </p>
+                                                                    </div>
 
-                                                    <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                                                        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                                                            <p className="text-sm font-semibold text-slate-900">
-                                                                Responder solicitud
-                                                            </p>
+                                                                    <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                                                                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                                            Usuario
+                                                                        </p>
+                                                                        <p className="mt-1 text-sm font-medium text-slate-800">
+                                                                            #{item.user_id}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
 
-                                                            <div className="mt-4 space-y-3">
+                                                                {item.admin_response ? (
+                                                                    <div className="mt-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                                            Respuesta interna enviada
+                                                                        </p>
+                                                                        <p className="mt-2 text-sm text-slate-700">{item.admin_response}</p>
+                                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                                            <StatusBadge>
+                                                                                Respondido: {formatDate(item.responded_at)}
+                                                                            </StatusBadge>
+                                                                            <StatusBadge>
+                                                                                Por: {item.responded_by_email || "admin"}
+                                                                            </StatusBadge>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null}
+
+                                                                {item.latest_quote_id ? (
+                                                                    <div className="mt-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                                                                            Última cotización asociada
+                                                                        </p>
+                                                                        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                                                            <p className="text-sm font-semibold text-slate-900">
+                                                                                {item.latest_quote_title}
+                                                                            </p>
+                                                                            <div className="flex flex-wrap gap-2">
+                                                                                <StatusBadge>{item.latest_quote_status}</StatusBadge>
+                                                                                <StatusBadge>
+                                                                                    {formatMoney(
+                                                                                        item.latest_quote_amount_cents,
+                                                                                        item.latest_quote_currency
+                                                                                    )}
+                                                                                </StatusBadge>
+                                                                                <StatusBadge>
+                                                                                    Expira: {formatDate(item.latest_quote_expires_at)}
+                                                                                </StatusBadge>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : null}
+
+                                                                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                                                                    <label className="text-sm font-medium text-slate-700">
+                                                                        Cambiar estado
+                                                                    </label>
+
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {["open", "pending", "resolved"].map((nextStatus) => (
+                                                                            <button
+                                                                                key={nextStatus}
+                                                                                type="button"
+                                                                                disabled={
+                                                                                    savingId === `ticket-status-${item.id}` ||
+                                                                                    item.status === nextStatus
+                                                                                }
+                                                                                onClick={() => handleStatusChange(item.id, nextStatus)}
+                                                                                className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                            >
+                                                                                {toReadableStatus(nextStatus)}
+                                                                            </button>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="mt-5 grid gap-4 xl:grid-cols-2">
+                                                                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                                        <p className="text-sm font-semibold text-slate-900">
+                                                                            Responder solicitud
+                                                                        </p>
+
+                                                                        <div className="mt-4 space-y-3">
                                 <textarea
                                     rows={5}
                                     value={responseDrafts[item.id] ?? ""}
@@ -1225,703 +1269,440 @@ export default function AdminDashboard() {
                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
                                 />
 
-                                                                <select
-                                                                    value={responseStatusDrafts[item.id] ?? item.status}
-                                                                    onChange={(event) =>
-                                                                        setResponseStatusDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [item.id]: event.target.value,
-                                                                        }))
-                                                                    }
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                                >
-                                                                    <option value="open">Abierta</option>
-                                                                    <option value="pending">Pendiente</option>
-                                                                    <option value="resolved">Resuelta</option>
-                                                                </select>
+                                                                            <select
+                                                                                value={responseStatusDrafts[item.id] ?? item.status}
+                                                                                onChange={(event) =>
+                                                                                    setResponseStatusDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: event.target.value,
+                                                                                    }))
+                                                                                }
+                                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
+                                                                            >
+                                                                                <option value="open">Abierta</option>
+                                                                                <option value="pending">Pendiente</option>
+                                                                                <option value="resolved">Resuelta</option>
+                                                                            </select>
 
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={savingId === `ticket-response-${item.id}`}
-                                                                    onClick={() => handleResponseSubmit(item.id)}
-                                                                    className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                                                                >
-                                                                    {savingId === `ticket-response-${item.id}`
-                                                                        ? "Guardando..."
-                                                                        : "Guardar respuesta"}
-                                                                </button>
-                                                            </div>
-                                                        </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={savingId === `ticket-response-${item.id}`}
+                                                                                onClick={() => handleResponseSubmit(item.id)}
+                                                                                className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
+                                                                            >
+                                                                                {savingId === `ticket-response-${item.id}`
+                                                                                    ? "Guardando..."
+                                                                                    : "Guardar respuesta"}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
 
-                                                        <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                                                            <p className="text-sm font-semibold text-slate-900">
-                                                                Generar cotización manual
-                                                            </p>
+                                                                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                                        <p className="text-sm font-semibold text-slate-900">
+                                                                            Generar cotización
+                                                                        </p>
 
-                                                            <div className="mt-4 space-y-3">
-                                                                <input
-                                                                    type="text"
-                                                                    value={quoteDrafts[item.id]?.title ?? ""}
-                                                                    onChange={(event) =>
-                                                                        setQuoteDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [item.id]: {
-                                                                                ...(prev[item.id] || {
-                                                                                    title: "",
-                                                                                    description: "",
-                                                                                    amountCents: "",
-                                                                                    expiresAt: "",
-                                                                                }),
-                                                                                title: event.target.value,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    placeholder="Título de la cotización"
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
-                                                                />
+                                                                        {/* Bot de cotización */}
+                                                                        <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-200">
+                                                                            <div className="flex-1 min-w-[120px]">
+                                                                                <label className="block text-[10px] font-semibold text-blue-700 mb-1">Categoría</label>
+                                                                                <select
+                                                                                    value={quoteDrafts[item.id]?.botCategory ?? "web_app"}
+                                                                                    onChange={(e) => setQuoteDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: { ...(prev[item.id] || { title:"", description:"", amountCents:"", expiresAt:"" }), botCategory: e.target.value },
+                                                                                    }))}
+                                                                                    className="w-full rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-xs"
+                                                                                >
+                                                                                    <option value="landing_page">Landing Page</option>
+                                                                                    <option value="web_app">Aplicación Web</option>
+                                                                                    <option value="ecommerce">E-commerce</option>
+                                                                                    <option value="mobile_app">App Móvil</option>
+                                                                                    <option value="automation">Automatización</option>
+                                                                                    <option value="maintenance">Mantenimiento</option>
+                                                                                    <option value="design">Diseño</option>
+                                                                                    <option value="consulting">Consultoría</option>
+                                                                                    <option value="other">Otro</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-[100px]">
+                                                                                <label className="block text-[10px] font-semibold text-blue-700 mb-1">Complejidad</label>
+                                                                                <select
+                                                                                    value={quoteDrafts[item.id]?.botComplexity ?? "medium"}
+                                                                                    onChange={(e) => setQuoteDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: { ...(prev[item.id] || { title:"", description:"", amountCents:"", expiresAt:"" }), botComplexity: e.target.value },
+                                                                                    }))}
+                                                                                    className="w-full rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-xs"
+                                                                                >
+                                                                                    <option value="low">Baja</option>
+                                                                                    <option value="medium">Media</option>
+                                                                                    <option value="high">Alta</option>
+                                                                                </select>
+                                                                            </div>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={async () => {
+                                                                                    try {
+                                                                                        const resp = await fetch("/api/admin/quote-bot", {
+                                                                                            method: "POST",
+                                                                                            headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.token}` },
+                                                                                            body: JSON.stringify({
+                                                                                                serviceCategory: quoteDrafts[item.id]?.botCategory || "web_app",
+                                                                                                complexity: quoteDrafts[item.id]?.botComplexity || "medium",
+                                                                                            }),
+                                                                                        });
+                                                                                        const data = await resp.json();
+                                                                                        if (resp.ok && data?.data?.suggestedPriceUsd) {
+                                                                                            const cents = Math.round(data.data.suggestedPriceUsd * 100);
+                                                                                            setQuoteDrafts((prev) => ({
+                                                                                                ...prev,
+                                                                                                [item.id]: { ...(prev[item.id] || { title:"", description:"", expiresAt:"" }), amountCents: String(cents) },
+                                                                                            }));
+                                                                                            setActionSuccess(`Precio sugerido: $${data.data.suggestedPriceUsd} USD`);
+                                                                                        }
+                                                                                    } catch { setActionError("Error al consultar el bot."); }
+                                                                                }}
+                                                                                className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition"
+                                                                            >
+                                                                                Sugerir precio
+                                                                            </button>
+                                                                        </div>
 
-                                                                <textarea
-                                                                    rows={4}
-                                                                    value={quoteDrafts[item.id]?.description ?? ""}
-                                                                    onChange={(event) =>
-                                                                        setQuoteDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [item.id]: {
-                                                                                ...(prev[item.id] || {
-                                                                                    title: "",
-                                                                                    description: "",
-                                                                                    amountCents: "",
-                                                                                    expiresAt: "",
-                                                                                }),
-                                                                                description: event.target.value,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    placeholder="Descripción del servicio o trabajo a realizar."
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
-                                                                />
+                                                                        <div className="mt-4 space-y-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                value={quoteDrafts[item.id]?.title ?? ""}
+                                                                                onChange={(event) =>
+                                                                                    setQuoteDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: {
+                                                                                            ...(prev[item.id] || {
+                                                                                                title: "",
+                                                                                                description: "",
+                                                                                                amountCents: "",
+                                                                                                expiresAt: "",
+                                                                                            }),
+                                                                                            title: event.target.value,
+                                                                                        },
+                                                                                    }))
+                                                                                }
+                                                                                placeholder="Título de la cotización"
+                                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
+                                                                            />
 
-                                                                <div className="grid gap-3 sm:grid-cols-2">
-                                                                    <input
-                                                                        type="number"
-                                                                        min="1"
-                                                                        step="1"
-                                                                        value={quoteDrafts[item.id]?.amountCents ?? ""}
-                                                                        onChange={(event) =>
-                                                                            setQuoteDrafts((prev) => ({
-                                                                                ...prev,
-                                                                                [item.id]: {
-                                                                                    ...(prev[item.id] || {
-                                                                                        title: "",
-                                                                                        description: "",
-                                                                                        amountCents: "",
-                                                                                        expiresAt: "",
-                                                                                    }),
-                                                                                    amountCents: event.target.value,
-                                                                                },
-                                                                            }))
-                                                                        }
-                                                                        placeholder="Monto en USD (ej: 500)"
-                                                                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
-                                                                    />
+                                                                            <textarea
+                                                                                rows={4}
+                                                                                value={quoteDrafts[item.id]?.description ?? ""}
+                                                                                onChange={(event) =>
+                                                                                    setQuoteDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [item.id]: {
+                                                                                            ...(prev[item.id] || {
+                                                                                                title: "",
+                                                                                                description: "",
+                                                                                                amountCents: "",
+                                                                                                expiresAt: "",
+                                                                                            }),
+                                                                                            description: event.target.value,
+                                                                                        },
+                                                                                    }))
+                                                                                }
+                                                                                placeholder="Descripción del servicio o trabajo a realizar."
+                                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
+                                                                            />
 
-                                                                    <input
-                                                                        type="date"
-                                                                        value={quoteDrafts[item.id]?.expiresAt ?? ""}
-                                                                        onChange={(event) =>
-                                                                            setQuoteDrafts((prev) => ({
-                                                                                ...prev,
-                                                                                [item.id]: {
-                                                                                    ...(prev[item.id] || {
-                                                                                        title: "",
-                                                                                        description: "",
-                                                                                        amountCents: "",
-                                                                                        expiresAt: "",
-                                                                                    }),
-                                                                                    expiresAt: event.target.value,
-                                                                                },
-                                                                            }))
-                                                                        }
-                                                                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                                    />
+                                                                            <div className="grid gap-3 sm:grid-cols-2">
+                                                                                <input
+                                                                                    type="number"
+                                                                                    min="1"
+                                                                                    step="1"
+                                                                                    value={quoteDrafts[item.id]?.amountCents ?? ""}
+                                                                                    onChange={(event) =>
+                                                                                        setQuoteDrafts((prev) => ({
+                                                                                            ...prev,
+                                                                                            [item.id]: {
+                                                                                                ...(prev[item.id] || {
+                                                                                                    title: "",
+                                                                                                    description: "",
+                                                                                                    amountCents: "",
+                                                                                                    expiresAt: "",
+                                                                                                }),
+                                                                                                amountCents: event.target.value,
+                                                                                            },
+                                                                                        }))
+                                                                                    }
+                                                                                    placeholder="Monto en USD (ej: 500)"
+                                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
+                                                                                />
+
+                                                                                <input
+                                                                                    type="date"
+                                                                                    value={quoteDrafts[item.id]?.expiresAt ?? ""}
+                                                                                    onChange={(event) =>
+                                                                                        setQuoteDrafts((prev) => ({
+                                                                                            ...prev,
+                                                                                            [item.id]: {
+                                                                                                ...(prev[item.id] || {
+                                                                                                    title: "",
+                                                                                                    description: "",
+                                                                                                    amountCents: "",
+                                                                                                    expiresAt: "",
+                                                                                                }),
+                                                                                                expiresAt: event.target.value,
+                                                                                            },
+                                                                                        }))
+                                                                                    }
+                                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
+                                                                                />
+                                                                            </div>
+
+                                                                            <button
+                                                                                type="button"
+                                                                                disabled={savingId === `ticket-quote-${item.id}`}
+                                                                                onClick={() => handleQuoteSubmit(item.id)}
+                                                                                className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
+                                                                            >
+                                                                                {savingId === `ticket-quote-${item.id}`
+                                                                                    ? "Procesando..."
+                                                                                    : "Crear cotización"}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={savingId === `ticket-quote-${item.id}`}
-                                                                    onClick={() => handleQuoteSubmit(item.id)}
-                                                                    className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70"
-                                                                >
-                                                                    {savingId === `ticket-quote-${item.id}`
-                                                                        ? "Procesando..."
-                                                                        : "Crear cotización"}
-                                                                </button>
                                                             </div>
-                                                        </div>
+                                                        )}
                                                     </div>
-                                                </article>
-                                            ))}
-                                        </div>
-                                    )}
-                                </SectionCard>
-                            </div>
-
-                            <div className="mt-6 grid gap-6 lg:grid-cols-12">
-                                <SectionCard
-                                    title="Gestión de clientes"
-                                    description="Rol, cobertura comercial y suscripción del cliente."
-                                    className="lg:col-span-6"
-                                >
-                                    {clients.length === 0 ? (
-                                        <EmptyBlock
-                                            title="Sin clientes"
-                                            description="Cuando existan usuarios con rol user, aparecerán aquí."
-                                        />
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {clients.map((client) => {
-                                                const draft = clientSubscriptionDrafts[client.id] || {
-                                                    planName: client.plan_name || "Standard",
-                                                    status: client.subscription_status || "inactive",
-                                                    coveragePercent:
-                                                        client.coverage_percent === null || client.coverage_percent === undefined
-                                                            ? 0
-                                                            : client.coverage_percent,
-                                                    startsAt: client.starts_at ? String(client.starts_at).slice(0, 10) : "",
-                                                    endsAt: client.ends_at ? String(client.ends_at).slice(0, 10) : "",
-                                                };
-
-                                                const effectiveCoveragePercent = getEffectiveCoveragePercent(draft);
-
-                                                return (
-                                                    <article
-                                                        key={client.id}
-                                                        className="rounded-2xl bg-white p-5 ring-1 ring-slate-200"
-                                                    >
-                                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                            <div>
-                                                                <p className="text-sm font-semibold text-slate-900">
-                                                                    {client.email}
-                                                                </p>
-                                                                <p className="mt-1 text-sm text-slate-600">
-                                                                    Cliente #{client.id} · rol {client.role}
-                                                                </p>
-                                                            </div>
-
-                                                            <div className="flex flex-wrap gap-2">
-                                                                <StatusBadge>{draft.planName || "Standard"}</StatusBadge>
-                                                                <StatusBadge>
-                                                                    {toReadableStatus(draft.status || "inactive")}
-                                                                </StatusBadge>
-                                                            </div>
-                                                        </div>
-
-                                                        <p className="mt-3 text-sm text-slate-600">
-                                                            Cobertura efectiva: {effectiveCoveragePercent}%
-                                                        </p>
-
-                                                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                                            <select
-                                                                value={draft.planName}
-                                                                onChange={(event) =>
-                                                                    setClientSubscriptionDrafts((prev) => {
-                                                                        const nextPlan = event.target.value;
-                                                                        return {
-                                                                            ...prev,
-                                                                            [client.id]: {
-                                                                                ...(prev[client.id] || {
-                                                                                    planName: "Standard",
-                                                                                    status: "inactive",
-                                                                                    coveragePercent: 0,
-                                                                                    startsAt: "",
-                                                                                    endsAt: "",
-                                                                                }),
-                                                                                planName: nextPlan,
-                                                                                coveragePercent:
-                                                                                    nextPlan === "Premium"
-                                                                                        ? 100
-                                                                                        : (prev[client.id]?.coveragePercent ?? 0),
-                                                                            },
-                                                                        };
-                                                                    })
-                                                                }
-                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                            >
-                                                                <option value="Standard">Standard</option>
-                                                                <option value="Premium">Premium</option>
-                                                            </select>
-
-                                                            <select
-                                                                value={draft.status}
-                                                                onChange={(event) =>
-                                                                    setClientSubscriptionDrafts((prev) => ({
-                                                                        ...prev,
-                                                                        [client.id]: {
-                                                                            ...(prev[client.id] || {
-                                                                                planName: "Standard",
-                                                                                status: "inactive",
-                                                                                coveragePercent: 0,
-                                                                                startsAt: "",
-                                                                                endsAt: "",
-                                                                            }),
-                                                                            status: event.target.value,
-                                                                        },
-                                                                    }))
-                                                                }
-                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                            >
-                                                                <option value="active">Activa</option>
-                                                                <option value="inactive">Inactiva</option>
-                                                                <option value="paused">Pausada</option>
-                                                                <option value="cancelled">Cancelada</option>
-                                                            </select>
-
-                                                            <input
-                                                                type="number"
-                                                                min="0"
-                                                                max="100"
-                                                                step="1"
-                                                                disabled={String(draft.planName || "").toLowerCase() === "premium"}
-                                                                value={effectiveCoveragePercent}
-                                                                onChange={(event) =>
-                                                                    setClientSubscriptionDrafts((prev) => ({
-                                                                        ...prev,
-                                                                        [client.id]: {
-                                                                            ...(prev[client.id] || {
-                                                                                planName: "Standard",
-                                                                                status: "inactive",
-                                                                                coveragePercent: 0,
-                                                                                startsAt: "",
-                                                                                endsAt: "",
-                                                                            }),
-                                                                            coveragePercent: event.target.value,
-                                                                        },
-                                                                    }))
-                                                                }
-                                                                placeholder="Cobertura %"
-                                                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                            />
-
-                                                            <div className="grid gap-3 sm:grid-cols-2 sm:col-span-2">
-                                                                <input
-                                                                    type="date"
-                                                                    value={draft.startsAt}
-                                                                    onChange={(event) =>
-                                                                        setClientSubscriptionDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [client.id]: {
-                                                                                ...(prev[client.id] || {
-                                                                                    planName: "Standard",
-                                                                                    status: "inactive",
-                                                                                    coveragePercent: 0,
-                                                                                    startsAt: "",
-                                                                                    endsAt: "",
-                                                                                }),
-                                                                                startsAt: event.target.value,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                                />
-
-                                                                <input
-                                                                    type="date"
-                                                                    value={draft.endsAt}
-                                                                    onChange={(event) =>
-                                                                        setClientSubscriptionDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [client.id]: {
-                                                                                ...(prev[client.id] || {
-                                                                                    planName: "Standard",
-                                                                                    status: "inactive",
-                                                                                    coveragePercent: 0,
-                                                                                    startsAt: "",
-                                                                                    endsAt: "",
-                                                                                }),
-                                                                                endsAt: event.target.value,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                                />
-                                                            </div>
-                                                        </div>
-
-                                                        <button
-                                                            type="button"
-                                                            disabled={savingId === `client-${client.id}`}
-                                                            onClick={() => handleSubscriptionSave(client.id)}
-                                                            className="mt-4 inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                                                        >
-                                                            {savingId === `client-${client.id}`
-                                                                ? "Guardando..."
-                                                                : "Guardar suscripción"}
-                                                        </button>
-                                                    </article>
                                                 );
                                             })}
                                         </div>
                                     )}
                                 </SectionCard>
+                            </div>
 
+
+                            {/* ── CLIENTES REGISTRADOS (expandible) ──────── */}
+                            <div className="mt-6">
                                 <SectionCard
-                                    title="Gestión de proyectos"
-                                    description="Seguimiento de entrega y estado de cada proyecto."
-                                    className="lg:col-span-6"
+                                    title="Clientes registrados"
+                                    description="Haz clic en un cliente para ver sus proyectos, cotizaciones y suscripción."
+                                    className=""
                                 >
-                                    {projects.length === 0 ? (
-                                        <EmptyBlock
-                                            title="Sin proyectos"
-                                            description="Cuando existan proyectos vinculados a clientes, aparecerán aquí."
-                                        />
+                                    {clients.length === 0 ? (
+                                        <EmptyBlock title="Sin clientes" description="Cuando se registren clientes, aparecerán aquí." />
                                     ) : (
-                                        <div className="space-y-4">
-                                            {projects.map((project) => (
-                                                <article
-                                                    key={project.id}
-                                                    className="rounded-2xl bg-white p-5 ring-1 ring-slate-200"
-                                                >
-                                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-slate-900">
-                                                                {project.name}
-                                                            </p>
-                                                            <p className="mt-1 text-sm text-slate-600">
-                                                                {project.user_email}
-                                                            </p>
-                                                        </div>
+                                        <div className="space-y-2">
+                                            {clients.map((client) => {
+                                                const isExpanded = expandedClientId === client.id;
+                                                const clientProjects = projects.filter((p) => p.user_id === client.id);
+                                                const clientQuotes = quotes.filter((q) => q.user_id === client.id);
 
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <StatusBadge>{toReadableServiceType(project.service_type)}</StatusBadge>
-                                                            <StatusBadge>{toReadableStatus(project.status)}</StatusBadge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 grid gap-3">
-                                                        <input
-                                                            type="text"
-                                                            value={projectDrafts[project.id]?.status ?? project.status}
-                                                            onChange={(event) =>
-                                                                setProjectDrafts((prev) => ({
-                                                                    ...prev,
-                                                                    [project.id]: {
-                                                                        ...(prev[project.id] || {
-                                                                            status: project.status || "pending",
-                                                                            deliveryEta: project.delivery_eta
-                                                                                ? String(project.delivery_eta).slice(0, 10)
-                                                                                : "",
-                                                                            note: project.latest_note || "",
-                                                                        }),
-                                                                        status: event.target.value,
-                                                                    },
-                                                                }))
-                                                            }
-                                                            placeholder="Estado del proyecto"
-                                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                        />
-
-                                                        <input
-                                                            type="date"
-                                                            value={
-                                                                projectDrafts[project.id]?.deliveryEta ??
-                                                                (project.delivery_eta
-                                                                    ? String(project.delivery_eta).slice(0, 10)
-                                                                    : "")
-                                                            }
-                                                            onChange={(event) =>
-                                                                setProjectDrafts((prev) => ({
-                                                                    ...prev,
-                                                                    [project.id]: {
-                                                                        ...(prev[project.id] || {
-                                                                            status: project.status || "pending",
-                                                                            deliveryEta: project.delivery_eta
-                                                                                ? String(project.delivery_eta).slice(0, 10)
-                                                                                : "",
-                                                                            note: project.latest_note || "",
-                                                                        }),
-                                                                        deliveryEta: event.target.value,
-                                                                    },
-                                                                }))
-                                                            }
-                                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                        />
-
-                                                        <textarea
-                                                            rows={4}
-                                                            value={projectDrafts[project.id]?.note ?? project.latest_note ?? ""}
-                                                            onChange={(event) =>
-                                                                setProjectDrafts((prev) => ({
-                                                                    ...prev,
-                                                                    [project.id]: {
-                                                                        ...(prev[project.id] || {
-                                                                            status: project.status || "pending",
-                                                                            deliveryEta: project.delivery_eta
-                                                                                ? String(project.delivery_eta).slice(0, 10)
-                                                                                : "",
-                                                                            note: project.latest_note || "",
-                                                                        }),
-                                                                        note: event.target.value,
-                                                                    },
-                                                                }))
-                                                            }
-                                                            placeholder="Nota operativa para el tracking del cliente"
-                                                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
-                                                        />
-                                                    </div>
-
-                                                    <div className="mt-4 flex flex-wrap gap-2">
-                                                        <StatusBadge>
-                                                            Fase actual: {toReadableStatus(project.latest_phase || project.status)}
-                                                        </StatusBadge>
-                                                        <StatusBadge>
-                                                            ETA: {project.delivery_eta ? formatDate(project.delivery_eta) : "—"}
-                                                        </StatusBadge>
-                                                    </div>
-
-                                                    <button
-                                                        type="button"
-                                                        disabled={savingId === `project-${project.id}`}
-                                                        onClick={() => handleProjectSave(project.id)}
-                                                        className="mt-4 inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                                                    >
-                                                        {savingId === `project-${project.id}`
-                                                            ? "Guardando..."
-                                                            : "Guardar proyecto"}
-                                                    </button>
-
-                                                    {/* ── Portfolio toggle ── */}
-                                                    <div className="mt-4 flex items-center gap-3">
+                                                return (
+                                                    <div key={client.id} className="rounded-2xl ring-1 ring-slate-200 overflow-hidden">
+                                                        {/* Header clickeable */}
                                                         <button
                                                             type="button"
-                                                            disabled={portfolioTogglingId === project.id}
-                                                            onClick={() =>
-                                                                handlePortfolioToggle(project.id, project.is_public)
-                                                            }
-                                                            className={`inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold shadow-sm ring-1 transition disabled:cursor-not-allowed disabled:opacity-70 ${
-                                                                project.is_public
-                                                                    ? "bg-emerald-400 text-slate-900 ring-emerald-300 hover:bg-emerald-300"
-                                                                    : "bg-white text-slate-700 ring-slate-200 hover:bg-slate-50"
-                                                            }`}
+                                                            onClick={() => setExpandedClientId(isExpanded ? null : client.id)}
+                                                            className="flex w-full items-center justify-between bg-white px-5 py-4 text-left transition hover:bg-slate-50"
                                                         >
-                                                            {portfolioTogglingId === project.id
-                                                                ? "Actualizando..."
-                                                                : project.is_public
-                                                                    ? "✓ Visible en portafolio"
-                                                                    : "Oculto del portafolio"}
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold text-slate-900 truncate">{client.email}</p>
+                                                                <p className="mt-0.5 text-xs text-slate-500">
+                                                                    {client.plan_name || "Standard"} · {client.subscription_status || "Sin suscripción"} · Registrado {formatDate(client.created_at)}
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 shrink-0">
+                                                                <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${client.plan_name === "Premium" && client.subscription_status === "active" ? "bg-cyan-50 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>
+                                                                    {client.plan_name || "Standard"}
+                                                                </span>
+                                                                <span className="text-slate-400 text-xs">{isExpanded ? "▲" : "▼"}</span>
+                                                            </div>
                                                         </button>
-                                                        <span className="text-xs text-slate-500">
-                                                            {project.is_public
-                                                                ? "Este proyecto aparece en la landing pública."
-                                                                : "Solo tú lo ves."}
-                                                        </span>
-                                                    </div>
 
-                                                    {/* ── Archivos entregados ── */}
-                                                    <div className="mt-5">
-                                                        <p className="text-sm font-semibold text-slate-900">
-                                                            Archivos entregados
-                                                        </p>
-
-                                                        {Array.isArray(project.files) && project.files.length > 0 ? (
-                                                            <div className="mt-3 space-y-2">
-                                                                {project.files.map((file) => (
-                                                                    <div
-                                                                        key={file.id}
-                                                                        className="flex flex-col gap-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between"
-                                                                    >
-                                                                        <div className="min-w-0">
-                                                                            <p className="truncate text-sm font-medium text-slate-900">
-                                                                                {file.download_label}
-                                                                            </p>
-                                                                            <p className="mt-0.5 text-xs text-slate-500">
-                                                                                {file.original_name} ·{" "}
-                                                                                {file.mime_type || "—"} ·{" "}
-                                                                                {file.size_bytes
-                                                                                    ? `${(file.size_bytes / 1024).toFixed(1)} KB`
-                                                                                    : "—"}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled={downloadingFileId === file.id}
-                                                                                onClick={() =>
-                                                                                    handleAdminFileDownload(
-                                                                                        file.id,
-                                                                                        file.download_label
-                                                                                    )
-                                                                                }
-                                                                                className="inline-flex items-center justify-center rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 transition hover:bg-slate-50 disabled:opacity-60"
-                                                                            >
-                                                                                {downloadingFileId === file.id
-                                                                                    ? "..."
-                                                                                    : "⬇"}
-                                                                            </button>
-                                                                            <button
-                                                                                type="button"
-                                                                                disabled={deletingFileId === file.id}
-                                                                                onClick={() =>
-                                                                                    handleFileDelete(
-                                                                                        file.id,
-                                                                                        project.id
-                                                                                    )
-                                                                                }
-                                                                                className="inline-flex items-center justify-center rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 ring-1 ring-red-200 transition hover:bg-red-100 disabled:opacity-60"
-                                                                            >
-                                                                                {deletingFileId === file.id
-                                                                                    ? "..."
-                                                                                    : "✕"}
-                                                                            </button>
-                                                                        </div>
+                                                        {/* Panel expandible */}
+                                                        {isExpanded && (
+                                                            <div className="border-t border-slate-100 bg-slate-50 p-5 space-y-5">
+                                                                {/* Suscripción */}
+                                                                <div>
+                                                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Suscripción</p>
+                                                                    <div className="grid gap-3 sm:grid-cols-3">
+                                                                        {["Standard", "Premium"].map((plan) => (
+                                                                            <div key={plan} className="flex items-center gap-2">
+                                                                                <select
+                                                                                    value={clientSubscriptionDrafts[client.id]?.planName ?? client.plan_name ?? "Standard"}
+                                                                                    onChange={(e) => setClientSubscriptionDrafts((prev) => ({
+                                                                                        ...prev,
+                                                                                        [client.id]: { ...(prev[client.id] || {}), planName: e.target.value },
+                                                                                    }))}
+                                                                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                                                                >
+                                                                                    <option value="Standard">Standard</option>
+                                                                                    <option value="Premium">Premium</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        )).slice(0, 1)}
+                                                                        <select
+                                                                            value={clientSubscriptionDrafts[client.id]?.status ?? client.subscription_status ?? "inactive"}
+                                                                            onChange={(e) => setClientSubscriptionDrafts((prev) => ({
+                                                                                ...prev,
+                                                                                [client.id]: { ...(prev[client.id] || {}), status: e.target.value },
+                                                                            }))}
+                                                                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                                                                        >
+                                                                            <option value="active">Activa</option>
+                                                                            <option value="inactive">Inactiva</option>
+                                                                            <option value="paused">Pausada</option>
+                                                                            <option value="cancelled">Cancelada</option>
+                                                                        </select>
+                                                                        <button
+                                                                            type="button"
+                                                                            disabled={savingId === `subscription-${client.id}`}
+                                                                            onClick={() => handleSubscriptionSave(client.id)}
+                                                                            className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                                                                        >
+                                                                            {savingId === `subscription-${client.id}` ? "Guardando..." : "Guardar"}
+                                                                        </button>
                                                                     </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <p className="mt-2 text-xs text-slate-500">
-                                                                Sin archivos subidos a este proyecto.
-                                                            </p>
-                                                        )}
+                                                                </div>
 
-                                                        {/* Formulario de subida */}
-                                                        <div className="mt-4 rounded-xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                                                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                                                Subir nuevo archivo
-                                                            </p>
-                                                            <div className="mt-3 space-y-3">
-                                                                <input
-                                                                    type="text"
-                                                                    value={
-                                                                        fileUploadDrafts[project.id]?.label ?? ""
-                                                                    }
-                                                                    onChange={(event) =>
-                                                                        setFileUploadDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [project.id]: {
-                                                                                ...(prev[project.id] || {}),
-                                                                                label: event.target.value,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    placeholder="Etiqueta visible para el cliente (ej. Manual de usuario)"
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
-                                                                />
-                                                                <input
-                                                                    type="file"
-                                                                    accept=".pdf,.zip,.rar,.docx,.doc,.xlsx,.xls,.txt,.png,.jpg,.jpeg,.webp,.svg"
-                                                                    onChange={(event) =>
-                                                                        setFileUploadDrafts((prev) => ({
-                                                                            ...prev,
-                                                                            [project.id]: {
-                                                                                ...(prev[project.id] || {}),
-                                                                                file: event.target.files?.[0] || null,
-                                                                            },
-                                                                        }))
-                                                                    }
-                                                                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold focus:border-cyan-400"
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    disabled={
-                                                                        uploadingFileId === project.id ||
-                                                                        !fileUploadDrafts[project.id]?.file ||
-                                                                        !fileUploadDrafts[project.id]?.label?.trim()
-                                                                    }
-                                                                    onClick={() =>
-                                                                        handleFileUpload(project.id)
-                                                                    }
-                                                                    className="inline-flex items-center justify-center rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-cyan-300 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-70"
-                                                                >
-                                                                    {uploadingFileId === project.id
-                                                                        ? "Subiendo..."
-                                                                        : "Subir archivo"}
-                                                                </button>
+                                                                {/* Proyectos del cliente */}
+                                                                <div>
+                                                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                                                        Proyectos ({clientProjects.length})
+                                                                    </p>
+                                                                    {clientProjects.length === 0 ? (
+                                                                        <p className="text-xs text-slate-400">Este cliente no tiene proyectos asignados.</p>
+                                                                    ) : (
+                                                                        <div className="space-y-3">
+                                                                            {clientProjects.map((project) => (
+                                                                                <div key={project.id} className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
+                                                                                    <div className="flex items-start justify-between">
+                                                                                        <div>
+                                                                                            <p className="text-sm font-semibold text-slate-900">{project.name}</p>
+                                                                                            <p className="mt-0.5 text-xs text-slate-500">{project.service_type} · {toReadableStatus(project.status)}</p>
+                                                                                        </div>
+                                                                                        {project.is_public && (
+                                                                                            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-600">Público</span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                                                                                        <select
+                                                                                            value={projectDrafts[project.id]?.status ?? project.status}
+                                                                                            onChange={(e) => setProjectDrafts((prev) => ({
+                                                                                                ...prev,
+                                                                                                [project.id]: { ...(prev[project.id] || {}), status: e.target.value },
+                                                                                            }))}
+                                                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                                                                                        >
+                                                                                            {["pending","analysis","in_development","qa","deployed","delivered"].map((s) => (
+                                                                                                <option key={s} value={s}>{toReadableStatus(s)}</option>
+                                                                                            ))}
+                                                                                        </select>
+                                                                                        <input
+                                                                                            type="date"
+                                                                                            value={projectDrafts[project.id]?.deliveryEta ?? project.delivery_eta?.slice(0, 10) ?? ""}
+                                                                                            onChange={(e) => setProjectDrafts((prev) => ({
+                                                                                                ...prev,
+                                                                                                [project.id]: { ...(prev[project.id] || {}), deliveryEta: e.target.value },
+                                                                                            }))}
+                                                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                                                                                        />
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            disabled={savingId === `project-${project.id}`}
+                                                                                            onClick={() => handleProjectSave(project.id)}
+                                                                                            className="rounded-xl bg-cyan-400 px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-cyan-300 disabled:opacity-50"
+                                                                                        >
+                                                                                            {savingId === `project-${project.id}` ? "..." : "Guardar"}
+                                                                                        </button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Cotizaciones del cliente */}
+                                                                <div>
+                                                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                                                                        Cotizaciones ({clientQuotes.length})
+                                                                    </p>
+                                                                    {clientQuotes.length === 0 ? (
+                                                                        <p className="text-xs text-slate-400">Sin cotizaciones para este cliente.</p>
+                                                                    ) : (
+                                                                        <div className="space-y-2">
+                                                                            {clientQuotes.map((q) => (
+                                                                                <div key={q.id} className="flex items-center justify-between rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+                                                                                    <div>
+                                                                                        <p className="text-sm font-medium text-slate-900">{q.title}</p>
+                                                                                        <p className="text-xs text-slate-500">{formatDate(q.created_at)} · {toReadableStatus(q.status)}</p>
+                                                                                    </div>
+                                                                                    <p className="text-sm font-bold text-emerald-600">{formatMoney(q.amount_cents, q.currency)}</p>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Crear cotización directa */}
+                                                                <div>
+                                                                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Crear cotización</p>
+                                                                    <div className="grid gap-2 sm:grid-cols-4">
+                                                                        <input
+                                                                            type="text"
+                                                                            placeholder="Título"
+                                                                            id={`dq-title-${client.id}`}
+                                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                                                                        />
+                                                                        <input
+                                                                            type="number"
+                                                                            min="1"
+                                                                            step="1"
+                                                                            placeholder="Monto USD"
+                                                                            id={`dq-amount-${client.id}`}
+                                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                                                                        />
+                                                                        <input
+                                                                            type="date"
+                                                                            id={`dq-expires-${client.id}`}
+                                                                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs"
+                                                                        />
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={async () => {
+                                                                                const title = document.getElementById(`dq-title-${client.id}`)?.value || "";
+                                                                                const amount = document.getElementById(`dq-amount-${client.id}`)?.value || "0";
+                                                                                const expires = document.getElementById(`dq-expires-${client.id}`)?.value || "";
+                                                                                if (!title || Number(amount) <= 0) { setActionError("Título y monto son requeridos."); return; }
+                                                                                try {
+                                                                                    const resp = await fetch("/api/admin/quotes/direct", {
+                                                                                        method: "POST",
+                                                                                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.token}` },
+                                                                                        body: JSON.stringify({ userId: client.id, title, amountUsd: Number(amount), expiresAt: expires || null }),
+                                                                                    });
+                                                                                    const data = await resp.json();
+                                                                                    if (resp.ok) { setActionSuccess("Cotización creada."); void loadAllData(); }
+                                                                                    else setActionError(data?.message || "Error al crear cotización.");
+                                                                                } catch { setActionError("Error de conexión."); }
+                                                                            }}
+                                                                            className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 transition"
+                                                                        >
+                                                                            Crear
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
                                                             </div>
-                                                        </div>
+                                                        )}
                                                     </div>
-                                                </article>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </SectionCard>
                             </div>
 
+                            {/* ── RESUMEN + ESTADÍSTICAS ─────────────────── */}
                             <div className="mt-6 grid gap-6 lg:grid-cols-12">
-                                <SectionCard
-                                    title="Módulo financiero mínimo"
-                                    description="Cotizaciones manuales generadas desde tickets y su trazabilidad."
-                                    className="lg:col-span-8"
-                                >
-                                    {quotes.length === 0 ? (
-                                        <EmptyBlock
-                                            title="Sin cotizaciones"
-                                            description="Cuando el equipo genere presupuestos manuales, aparecerán aquí."
-                                        />
-                                    ) : (
-                                        <div className="space-y-4">
-                                            {quotes.map((quote) => (
-                                                <article
-                                                    key={quote.id}
-                                                    className="rounded-2xl bg-white p-5 ring-1 ring-slate-200"
-                                                >
-                                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-slate-900">{quote.title}</p>
-                                                            <p className="mt-1 text-sm text-slate-600">
-                                                                {quote.description || "Sin descripción adicional."}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="flex flex-wrap gap-2">
-                                                            <StatusBadge>{quote.status}</StatusBadge>
-                                                            <StatusBadge>
-                                                                {formatMoney(quote.amount_cents, quote.currency)}
-                                                            </StatusBadge>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Cliente
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {quote.user_email}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Proyecto
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {quote.project_name || "Sin proyecto"}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Ticket origen
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {quote.source_request_id ? `#${quote.source_request_id}` : "—"}
-                                                            </p>
-                                                        </div>
-
-                                                        <div className="rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                                                            <p className="text-xs uppercase tracking-wide text-slate-500">
-                                                                Expiración
-                                                            </p>
-                                                            <p className="mt-1 text-sm font-medium text-slate-800">
-                                                                {formatDate(quote.expires_at)}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                </article>
-                                            ))}
-                                        </div>
-                                    )}
-                                </SectionCard>
-
                                 <SectionCard
                                     title="Resumen general"
                                     description="Vista rápida del estado de tu negocio."
@@ -1930,25 +1711,64 @@ export default function AdminDashboard() {
                                     <div className="space-y-3">
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
                                             <p className="text-sm font-semibold text-slate-900">Solicitudes pendientes</p>
-                                            <p className="mt-2 text-sm text-slate-600">
-                                                {summary.pendingTickets} en seguimiento.
-                                            </p>
+                                            <p className="mt-2 text-sm text-slate-600">{summary.pendingTickets} en seguimiento.</p>
                                         </div>
-
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
                                             <p className="text-sm font-semibold text-slate-900">Cotizaciones</p>
-                                            <p className="mt-2 text-sm text-slate-600">
-                                                {quoteSummary.total} registradas, {quoteSummary.pending} pendientes.
-                                            </p>
+                                            <p className="mt-2 text-sm text-slate-600">{quoteSummary.total} registradas, {quoteSummary.pending} pendientes.</p>
                                         </div>
-
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
                                             <p className="text-sm font-semibold text-slate-900">Clientes Premium</p>
-                                            <p className="mt-2 text-sm text-slate-600">
-                                                {summary.premiumClients} clientes con soporte y mantenimiento incluido.
-                                            </p>
+                                            <p className="mt-2 text-sm text-slate-600">{summary.premiumClients} con soporte incluido.</p>
                                         </div>
                                     </div>
+                                </SectionCard>
+
+                                <SectionCard
+                                    title="Estadísticas"
+                                    description="Distribución de proyectos y actividad."
+                                    className="lg:col-span-8"
+                                >
+                                    {adminStats ? (
+                                        <div className="grid gap-4 sm:grid-cols-2">
+                                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                <p className="text-xs font-semibold text-slate-700 mb-3">Estado de proyectos</p>
+                                                <div className="space-y-2">
+                                                    {(adminStats.projectStatus || []).map((ps) => {
+                                                        const mx = Math.max(...(adminStats.projectStatus || []).map(p => p.count), 1);
+                                                        const pct = Math.round((ps.count / mx) * 100);
+                                                        const cl = { pending:"bg-amber-400", in_development:"bg-blue-500", qa:"bg-purple-500", deployed:"bg-emerald-500", delivered:"bg-cyan-500" };
+                                                        return (<div key={ps.status}><div className="flex justify-between text-[11px] text-slate-600 mb-0.5"><span>{toReadableStatus(ps.status)}</span><span className="font-bold">{ps.count}</span></div><div className="h-2.5 w-full rounded-full bg-slate-200 overflow-hidden"><div className={`h-full rounded-full ${cl[ps.status]||"bg-slate-400"}`} style={{width:`${pct}%`}} /></div></div>);
+                                                    })}
+                                                    {(adminStats.projectStatus||[]).length === 0 && <p className="text-xs text-slate-400">Sin datos</p>}
+                                                </div>
+                                            </div>
+                                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                <p className="text-xs font-semibold text-slate-700 mb-3">Solicitudes (30 días)</p>
+                                                <div className="flex items-end gap-1 h-24">
+                                                    {(adminStats.ticketTrend||[]).length > 0 ? adminStats.ticketTrend.map((d) => {
+                                                        const mx = Math.max(...adminStats.ticketTrend.map(x=>x.count),1);
+                                                        return (<div key={d.day} className="flex-1 bg-blue-500 rounded-t-sm hover:bg-blue-600 transition" style={{height:`${Math.max((d.count/mx)*100,4)}%`}} title={`${d.day}: ${d.count}`} />);
+                                                    }) : <p className="text-xs text-slate-400 m-auto">Sin actividad</p>}
+                                                </div>
+                                                {(adminStats.ticketTrend||[]).length>0 && <div className="mt-1 flex justify-between text-[10px] text-slate-400"><span>{adminStats.ticketTrend[0]?.day?.slice(5)}</span><span>{adminStats.ticketTrend.at(-1)?.day?.slice(5)}</span></div>}
+                                            </div>
+                                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                <p className="text-xs font-semibold text-slate-700 mb-1">Ingresos por cotizaciones</p>
+                                                <p className="text-2xl font-bold text-emerald-600">${Number(adminStats.revenue?.total_revenue_usd||0).toLocaleString("en-US",{minimumFractionDigits:2})}</p>
+                                                <p className="text-[11px] text-slate-500 mt-1">{adminStats.revenue?.paid_count||0} pagadas · {adminStats.revenue?.pending_count||0} pendientes</p>
+                                            </div>
+                                            <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                                                <p className="text-xs font-semibold text-slate-700 mb-3">Nuevos clientes</p>
+                                                <div className="flex items-end gap-2 h-20">
+                                                    {(adminStats.clientGrowth||[]).length>0 ? adminStats.clientGrowth.map((m)=>{
+                                                        const mx=Math.max(...adminStats.clientGrowth.map(x=>x.new_clients),1);
+                                                        return (<div key={m.month} className="flex-1 flex flex-col items-center gap-0.5"><span className="text-[10px] font-bold text-slate-600">{m.new_clients}</span><div className="w-full bg-cyan-400 rounded-t-sm" style={{height:`${Math.max((m.new_clients/mx)*100,8)}%`}} /><span className="text-[9px] text-slate-400">{m.month?.slice(5)}</span></div>);
+                                                    }) : <p className="text-xs text-slate-400 m-auto">Sin datos</p>}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : <p className="text-center text-sm text-slate-400 py-6">Cargando estadísticas...</p>}
                                 </SectionCard>
                             </div>
                         </>

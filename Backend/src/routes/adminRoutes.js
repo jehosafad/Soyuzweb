@@ -245,6 +245,104 @@ router.patch("/leads/:id/status", async (req, res, next) => {
     }
 });
 
+// ─── Aceptar Lead → Crear Ticket y Proyecto para el cliente ───────────────────
+
+router.post("/leads/:id/accept", async (req, res, next) => {
+    try {
+        const leadId = Number.parseInt(req.params.id, 10);
+        const adminNote = String(req.body?.adminNote || "").trim();
+        const serviceType = String(req.body?.serviceType || "web_app").trim();
+
+        if (!Number.isInteger(leadId) || leadId <= 0) {
+            const err = new Error("El contacto no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        // 1. Obtener el lead
+        const leadResult = await pool.query(
+            `SELECT id, name, email, subject, message, admin_status
+             FROM public.contact_messages WHERE id = $1 LIMIT 1`,
+            [leadId]
+        );
+
+        if (leadResult.rowCount === 0) {
+            const err = new Error("El contacto no existe.");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const lead = leadResult.rows[0];
+
+        // 2. Buscar si el email corresponde a un usuario registrado
+        const userResult = await pool.query(
+            `SELECT id, email, full_name FROM public.users WHERE email = $1 AND role = 'user' LIMIT 1`,
+            [lead.email.toLowerCase()]
+        );
+
+        if (userResult.rowCount === 0) {
+            const err = new Error(`No existe un cliente registrado con el correo ${lead.email}. El usuario debe crear cuenta primero.`);
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const clientUser = userResult.rows[0];
+
+        // 3. Crear proyecto para el cliente
+        const projectResult = await pool.query(
+            `INSERT INTO public.projects (user_id, name, service_type, status, description, delivery_eta)
+             VALUES ($1, $2, $3, 'pending', $4, NULL)
+             RETURNING id, name, status`,
+            [clientUser.id, lead.subject || "Proyecto sin título", serviceType, lead.message || adminNote || ""]
+        );
+
+        const project = projectResult.rows[0];
+
+        // 4. Crear ticket de soporte vinculado al proyecto
+        await pool.query(
+            `INSERT INTO public.support_requests (user_id, project_id, summary, details, status)
+             VALUES ($1, $2, $3, $4, 'open')`,
+            [clientUser.id, project.id, lead.subject || "Solicitud desde contacto", lead.message || ""]
+        );
+
+        // 5. Crear garantía de 6 meses
+        await pool.query(
+            `INSERT INTO public.warranties (project_id, starts_at, ends_at, status, notes)
+             VALUES ($1, NOW()::date, (NOW() + INTERVAL '6 months')::date, 'active', 'Cobertura de 6 meses incluida')`,
+            [project.id]
+        );
+
+        // 6. Crear suscripción Standard si no tiene
+        const existingSub = await pool.query(
+            `SELECT id FROM public.subscriptions WHERE user_id = $1 LIMIT 1`,
+            [clientUser.id]
+        );
+
+        if (existingSub.rowCount === 0) {
+            await pool.query(
+                `INSERT INTO public.subscriptions (user_id, plan_name, status, coverage_percent, starts_at, ends_at)
+                 VALUES ($1, 'Standard', 'active', 0, NOW()::date, (NOW() + INTERVAL '6 months')::date)`,
+                [clientUser.id]
+            );
+        }
+
+        // 7. Marcar lead como archivado
+        await pool.query(
+            `UPDATE public.contact_messages SET admin_status = 'archived', admin_note = $2 WHERE id = $1`,
+            [leadId, adminNote || `Aceptado → Proyecto #${project.id}`]
+        );
+
+        return res.status(201).json({
+            ok: true,
+            requestId: req.id || null,
+            data: { leadId, projectId: project.id, clientId: clientUser.id, clientEmail: clientUser.email },
+            message: `Proyecto creado para ${clientUser.email}. Ticket abierto y garantía de 6 meses activada.`,
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
 // ─── Tickets de soporte ───────────────────────────────────────────────────────
 
 router.get("/support-requests", async (req, res, next) => {
@@ -1376,6 +1474,64 @@ router.patch("/projects/:id/portfolio", async (req, res, next) => {
             requestId: req.id || null,
             data: result.rows[0],
             message: "Portafolio del proyecto actualizado.",
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+// ─── Crear cotización directa para un cliente (USD) ───────────────────────────
+
+router.post("/quotes/direct", async (req, res, next) => {
+    try {
+        const userId = Number.parseInt(req.body?.userId, 10);
+        const title = String(req.body?.title || "").trim();
+        const description = String(req.body?.description || "").trim();
+        const amountUsd = Number.parseFloat(req.body?.amountUsd);
+        const projectId = req.body?.projectId ? Number.parseInt(req.body.projectId, 10) : null;
+        const expiresAt = req.body?.expiresAt ? String(req.body.expiresAt).trim() : null;
+
+        if (!Number.isInteger(userId) || userId <= 0) {
+            const err = new Error("El cliente no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        if (title.length < 4 || title.length > 180) {
+            const err = new Error("El título debe tener entre 4 y 180 caracteres.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        if (!Number.isFinite(amountUsd) || amountUsd <= 0) {
+            const err = new Error("El monto en USD debe ser mayor a 0.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const userCheck = await pool.query(
+            `SELECT id, email FROM public.users WHERE id = $1 AND role = 'user' LIMIT 1`,
+            [userId]
+        );
+
+        if (userCheck.rowCount === 0) {
+            const err = new Error("El cliente no existe.");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const result = await pool.query(
+            `INSERT INTO public.quotes (user_id, project_id, title, description, amount_cents, amount_usd, currency, status, expires_at)
+             VALUES ($1, $2, $3, $4, $5, $6, 'USD', 'pending', $7)
+             RETURNING id, user_id, project_id, title, description, amount_usd, currency, status, created_at, expires_at`,
+            [userId, projectId, title, description, Math.round(amountUsd * 100), amountUsd, expiresAt]
+        );
+
+        return res.status(201).json({
+            ok: true,
+            requestId: req.id || null,
+            data: result.rows[0],
+            message: "Cotización creada correctamente.",
         });
     } catch (err) {
         return next(err);

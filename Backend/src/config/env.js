@@ -49,6 +49,11 @@ const envSchema = z.object({
     DB_NAME: z.string().min(1),
 
     DATABASE_URL: z.string().optional(),
+
+    // PayPal (opcionales — si no están, el módulo de pagos queda deshabilitado)
+    PAYPAL_CLIENT_ID: z.string().optional(),
+    PAYPAL_SECRET: z.string().optional(),
+    PAYPAL_MODE: z.enum(["sandbox", "production"]).default("sandbox"),
 });
 
 const parsed = envSchema.safeParse(process.env);

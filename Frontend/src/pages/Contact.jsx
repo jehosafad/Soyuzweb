@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SectionHeading from "../components/SectionHeading";
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -9,10 +9,25 @@ export default function Contact() {
         email: "",
         subject: "",
         message: "",
-        website: "", // <- Nuestro Honeypot invisible
+        website: "",
     });
-    const [status, setStatus] = useState("idle"); // idle, loading, success, error
+    const [status, setStatus] = useState("idle");
     const [errorMessage, setErrorMessage] = useState("");
+
+    // Auto-rellenar nombre y email si el usuario ya tiene sesión
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("soyuz_user");
+            if (raw) {
+                const u = JSON.parse(raw);
+                setFormData((prev) => ({
+                    ...prev,
+                    name: u.fullName || prev.name,
+                    email: u.email || prev.email,
+                }));
+            }
+        } catch {}
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });

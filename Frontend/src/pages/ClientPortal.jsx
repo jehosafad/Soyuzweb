@@ -214,6 +214,8 @@ export default function ClientPortal() {
 
     const [status, setStatus] = useState("loading");
     const [error, setError] = useState("");
+    const [paymentMsg, setPaymentMsg] = useState("");
+    const [myPayments, setMyPayments] = useState([]);
     const [portalData, setPortalData] = useState({
         summary: {
             messagesCount: 0,
@@ -306,6 +308,57 @@ export default function ClientPortal() {
     useEffect(() => {
         void loadPortal();
     }, [loadPortal]);
+
+    // ── Capturar pago PayPal al volver ────────────────────────────────────────
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const paymentStatus = params.get("payment");
+        const paypalToken = params.get("token"); // PayPal devuelve el order ID como "token"
+
+        if (paymentStatus === "success" && paypalToken) {
+            (async () => {
+                try {
+                    const token = getStoredToken();
+                    const resp = await fetch("/api/payments/capture-order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                        body: JSON.stringify({ paypalOrderId: paypalToken }),
+                    });
+                    const data = await resp.json();
+                    if (resp.ok) {
+                        setPaymentMsg("¡Pago procesado correctamente! Gracias por tu confianza.");
+                        void loadPortal(); // Recargar datos
+                    } else {
+                        setPaymentMsg(data?.message || "Hubo un problema al procesar tu pago.");
+                    }
+                } catch {
+                    setPaymentMsg("Error al conectar con el sistema de pagos.");
+                }
+                // Limpiar URL
+                window.history.replaceState({}, "", "/client/portal");
+            })();
+        } else if (paymentStatus === "cancelled") {
+            setPaymentMsg("El pago fue cancelado. Puedes intentarlo de nuevo cuando quieras.");
+            window.history.replaceState({}, "", "/client/portal");
+        }
+    }, []);
+
+    // ── Cargar historial de pagos ─────────────────────────────────────────────
+    useEffect(() => {
+        (async () => {
+            try {
+                const token = getStoredToken();
+                if (!token) return;
+                const resp = await fetch("/api/payments/my-payments", {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    setMyPayments(data?.data || []);
+                }
+            } catch {}
+        })();
+    }, []);
 
     async function handleFileDownload(fileId, downloadLabel) {
         const token = getStoredToken();
@@ -455,6 +508,21 @@ export default function ClientPortal() {
 
     return (
         <main className="min-h-screen bg-slate-50">
+            {/* ── Top nav ──────────────────────────────────────────── */}
+            <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur">
+                <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <a href="/" className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition">
+                        <span className="grid h-8 w-8 place-items-center rounded-xl overflow-hidden bg-slate-50 ring-1 ring-slate-200">
+                            <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
+                        </span>
+                        Soyuz
+                    </a>
+                    <div className="flex items-center gap-3">
+                        <a href="/" className="rounded-xl px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-slate-200 transition hover:bg-slate-50">Ir al sitio web</a>
+                        <button onClick={() => { clearSession(); window.location.replace("/login"); }} className="rounded-xl px-3 py-1.5 text-xs font-medium text-red-600 ring-1 ring-red-200 transition hover:bg-red-50">Cerrar sesión</button>
+                    </div>
+                </div>
+            </nav>
             <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
                 <div className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-200">
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -471,7 +539,7 @@ export default function ClientPortal() {
                             </p>
                             <p className="mt-3 text-sm text-slate-500">
                                 Hola,{" "}
-                                <span className="font-medium text-slate-700">{user?.email || "cliente"}</span> 👋
+                                <span className="font-medium text-slate-700">{user?.fullName || user?.email?.split("@")[0] || "cliente"}</span> 👋
                             </p>
                         </div>
 
@@ -508,6 +576,14 @@ export default function ClientPortal() {
                         </div>
                     </div>
                 ) : null}
+
+                {/* Notificación de pago */}
+                {paymentMsg && (
+                    <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-sm text-blue-800 ring-1 ring-blue-200 flex items-center justify-between">
+                        <span>{paymentMsg}</span>
+                        <button onClick={() => setPaymentMsg("")} className="ml-4 text-blue-600 hover:text-blue-800 font-bold text-lg">&times;</button>
+                    </div>
+                )}
 
                 <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
                     <MetricCard
@@ -848,14 +924,48 @@ export default function ClientPortal() {
                                                         <StatusBadge>{toReadableStatus(quote.status)}</StatusBadge>
                                                     </div>
 
-                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                    <div className="mt-3 flex flex-wrap items-center gap-2">
                                                         <StatusBadge>
                                                             {formatMoney(quote.amount_cents, quote.currency)}
                                                         </StatusBadge>
                                                         <StatusBadge>Expira: {formatDate(quote.expires_at)}</StatusBadge>
                                                         {quote.source_request_id ? (
-                                                            <StatusBadge>Ligada a ticket #{quote.source_request_id}</StatusBadge>
+                                                            <StatusBadge>Ticket #{quote.source_request_id}</StatusBadge>
                                                         ) : null}
+
+                                                        {/* Botón de pago PayPal para cotizaciones pendientes */}
+                                                        {quote.status === "pending" && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        const token = getStoredToken();
+                                                                        const resp = await fetch("/api/payments/create-order", {
+                                                                            method: "POST",
+                                                                            headers: {
+                                                                                "Content-Type": "application/json",
+                                                                                Authorization: `Bearer ${token}`,
+                                                                            },
+                                                                            body: JSON.stringify({ quoteId: quote.id }),
+                                                                        });
+                                                                        const data = await resp.json();
+                                                                        if (resp.ok && data?.data?.approveUrl) {
+                                                                            window.location.href = data.data.approveUrl;
+                                                                        } else {
+                                                                            alert(data?.message || "No se pudo iniciar el pago.");
+                                                                        }
+                                                                    } catch {
+                                                                        alert("Error al conectar con el sistema de pagos.");
+                                                                    }
+                                                                }}
+                                                                className="ml-auto rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                                                            >
+                                                                💳 Pagar con PayPal
+                                                            </button>
+                                                        )}
+                                                        {quote.status === "paid" && (
+                                                            <span className="ml-auto rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">✓ Pagado</span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             ))}
@@ -866,6 +976,30 @@ export default function ClientPortal() {
                         ) : null}
                     </PanelCard>
                 </div>
+
+                {/* ── Historial de Pagos ──────────────────────────────────── */}
+                {myPayments.length > 0 && (
+                    <div className="mt-8">
+                        <PanelCard title="Mis pagos">
+                            <div className="space-y-2">
+                                {myPayments.map((p) => (
+                                    <div key={p.id} className="flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 ring-1 ring-slate-200">
+                                        <div>
+                                            <p className="text-sm font-medium text-slate-900">{p.quote_title || p.description || "Pago"}</p>
+                                            <p className="text-xs text-slate-500">{new Date(p.created_at).toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-bold text-emerald-600">${Number(p.amount_usd).toFixed(2)} USD</p>
+                                            <span className={`text-xs font-medium ${p.status === "completed" ? "text-emerald-600" : p.status === "pending" ? "text-amber-600" : "text-red-500"}`}>
+                                                {p.status === "completed" ? "✓ Completado" : p.status === "pending" ? "Pendiente" : "Fallido"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </PanelCard>
+                    </div>
+                )}
 
                 <div className="mt-8">
                     <PanelCard title="Solicitudes y siguiente integración">

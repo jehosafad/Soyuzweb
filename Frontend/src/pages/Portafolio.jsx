@@ -60,7 +60,7 @@ function SkeletonCard() {
 function EmptyPortfolio() {
   return (
       <div className="col-span-full flex flex-col items-center rounded-3xl bg-white py-16 text-center shadow-sm ring-1 ring-slate-200">
-        <span className="text-5xl" aria-hidden="true">🚀</span>
+        <div className="h-16 w-16 mx-auto rounded-2xl overflow-hidden ring-1 ring-slate-200"><img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" /></div>
         <p className="mt-5 text-lg font-semibold text-slate-900">
           Proyectos en camino
         </p>
@@ -78,7 +78,49 @@ function EmptyPortfolio() {
 
 export default function Portfolio() {
   const [projects, setProjects] = useState([]);
-  const [status, setStatus] = useState("loading"); // "loading" | "success" | "error"
+  const [status, setStatus] = useState("loading");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminProjects, setAdminProjects] = useState([]);
+  const [togglingId, setTogglingId] = useState(null);
+
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("soyuz_access_token");
+      if (token) {
+        const p = JSON.parse(atob(token.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")));
+        if (p.role === "admin") setIsAdmin(true);
+      }
+    } catch {}
+  }, []);
+
+  function getToken() { return localStorage.getItem("soyuz_access_token"); }
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/projects", { headers: { Authorization: `Bearer ${getToken()}` } });
+        if (r.ok) { const d = await r.json(); setAdminProjects(d?.data?.items || []); }
+      } catch {}
+    })();
+  }, [isAdmin]);
+
+  async function toggleVis(id, cur) {
+    setTogglingId(id);
+    try {
+      const r = await fetch(`/api/admin/projects/${id}/visibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({ isPublic: !cur }),
+      });
+      if (r.ok) {
+        setAdminProjects((p) => p.map((x) => x.id === id ? { ...x, is_public: !cur } : x));
+        const pr = await fetch("/api/public/portfolio");
+        if (pr.ok) { const d = await pr.json(); setProjects(d?.data || []); }
+      }
+    } catch {}
+    setTogglingId(null);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -127,6 +169,28 @@ export default function Portfolio() {
             title="Proyectos y casos de éxito"
             description="Proyectos reales entregados y desplegados por Agencia Soyuz. Cada uno representa un cliente real con necesidades concretas y resultados medibles."
         />
+
+        {/* Panel admin: gestión de visibilidad */}
+        {isAdmin && adminProjects.length > 0 && (
+            <div className="mt-8 rounded-2xl bg-slate-900 p-6 ring-1 ring-slate-700">
+              <p className="text-sm font-semibold text-white mb-1">Gestión de portafolio (solo admin)</p>
+              <p className="text-xs text-slate-400 mb-4">Activa o desactiva la visibilidad pública de cada proyecto.</p>
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {adminProjects.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between rounded-xl bg-white/5 px-4 py-3 ring-1 ring-white/10">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">{p.name}</p>
+                        <p className="text-xs text-slate-400">{p.status} · {p.user_email}</p>
+                      </div>
+                      <button onClick={() => toggleVis(p.id, p.is_public)} disabled={togglingId === p.id}
+                              className={`ml-3 shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${p.is_public ? "bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30" : "bg-slate-700 text-slate-400 ring-1 ring-slate-600"} disabled:opacity-50`}>
+                        {togglingId === p.id ? "..." : p.is_public ? "🟢 Visible" : "Oculto"}
+                      </button>
+                    </div>
+                ))}
+              </div>
+            </div>
+        )}
 
         {/* Estado de carga */}
         {status === "loading" ? (
