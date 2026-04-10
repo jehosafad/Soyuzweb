@@ -200,9 +200,32 @@ async function sendNewDeliverableNotification({ to, projectName, fileLabel }) {
     });
 }
 
+async function sendPasswordResetEmail({ to, resetToken }) {
+    const resetUrl = `${PORTAL_URL.replace("/client/portal", "")}/reset-password?token=${resetToken}`;
+
+    return sendMail({
+        to,
+        subject: "Recupera tu contraseña — Soyuz",
+        html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:24px;">
+        <h2 style="color:#1e40af;">Soyuz</h2>
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+        <p>Haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+        <p style="margin:24px 0;">
+          <a href="${escapeHtml(resetUrl)}" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;">
+            Restablecer contraseña
+          </a>
+        </p>
+        <p style="color:#64748b;font-size:13px;">Este enlace expira en 1 hora. Si no solicitaste esto, ignora este correo.</p>
+      </div>
+    `,
+    });
+}
+
 module.exports = {
     sendTicketResponseNotification,
     sendNewQuoteNotification,
     sendProjectPhaseNotification,
     sendNewDeliverableNotification,
+    sendPasswordResetEmail,
 };

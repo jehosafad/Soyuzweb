@@ -7,6 +7,9 @@ import Services from "./pages/Services";
 import Portafolio from "./pages/Portafolio";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import ClientPortal from "./pages/ClientPortal";
 import AdminDashboard from "./pages/AdminDashboard";
 
@@ -26,13 +29,8 @@ function decodeJwtPayload(token) {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-
     const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(
-        base64.length + ((4 - (base64.length % 4)) % 4),
-        "="
-    );
-
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
     return JSON.parse(atob(padded));
   } catch {
     return null;
@@ -42,19 +40,16 @@ function decodeJwtPayload(token) {
 function getSession() {
   const token = getStoredToken();
   if (!token) return null;
-
   const payload = decodeJwtPayload(token);
   if (!payload) {
     clearSession();
     return null;
   }
-
   const now = Math.floor(Date.now() / 1000);
   if (payload.exp && payload.exp < now) {
     clearSession();
     return null;
   }
-
   return {
     token,
     user: {
@@ -73,23 +68,16 @@ function resolvePrivatePath(role) {
 
 function ProtectedRoute({ allowedRoles, children }) {
   const session = getSession();
-
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
-
+  if (!session) return <Navigate to="/login" replace />;
   if (!allowedRoles.includes(session.user.role)) {
     return <Navigate to={resolvePrivatePath(session.user.role)} replace />;
   }
-
   return children;
 }
 
 function PublicOnlyRoute({ children }) {
   const session = getSession();
-
   if (!session) return children;
-
   return <Navigate to={resolvePrivatePath(session.user.role)} replace />;
 }
 
@@ -113,6 +101,30 @@ export default function App() {
                 element={
                   <PublicOnlyRoute>
                     <Login />
+                  </PublicOnlyRoute>
+                }
+            />
+            <Route
+                path="/register"
+                element={
+                  <PublicOnlyRoute>
+                    <Register />
+                  </PublicOnlyRoute>
+                }
+            />
+            <Route
+                path="/forgot-password"
+                element={
+                  <PublicOnlyRoute>
+                    <ForgotPassword />
+                  </PublicOnlyRoute>
+                }
+            />
+            <Route
+                path="/reset-password"
+                element={
+                  <PublicOnlyRoute>
+                    <ResetPassword />
                   </PublicOnlyRoute>
                 }
             />

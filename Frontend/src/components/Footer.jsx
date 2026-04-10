@@ -10,27 +10,18 @@ export default function Footer() {
               <div className="grid h-10 w-10 place-items-center rounded-2xl bg-slate-50 ring-1 ring-slate-200">
                 <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_6px_rgba(34,211,238,0.12)]" />
               </div>
-
               <div>
-                <p className="text-lg font-semibold tracking-tight text-blue-600">
-                  Soyuz
-                </p>
+                <p className="text-lg font-semibold tracking-tight text-blue-600">Soyuz</p>
                 <p className="text-sm text-slate-600">
-                  Automatización y desarrollo web con estética corporativa y ejecución limpia.
+                  Desarrollo web, automatización y soluciones digitales a medida.
                 </p>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs text-slate-600">
-            <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
-              Bento Grid
-            </span>
-              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
-              SaaS moderno
-            </span>
-              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
-              Ingeniería limpia
-            </span>
+              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Desarrollo web</span>
+              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Automatización</span>
+              <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Diseño</span>
             </div>
           </div>
 
@@ -38,20 +29,11 @@ export default function Footer() {
             <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-900">
               Enlaces
             </h3>
-
             <nav className="grid gap-3 text-sm">
-              <Link className="text-slate-700 transition hover:text-blue-600" to="/">
-                Inicio
-              </Link>
-              <Link className="text-slate-700 transition hover:text-blue-600" to="/portafolio">
-                Portafolio
-              </Link>
-              <Link className="text-slate-700 transition hover:text-blue-600" to="/contacto">
-                Contacto
-              </Link>
-              <Link className="text-slate-700 transition hover:text-blue-600" to="/login">
-                Iniciar sesión
-              </Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/">Inicio</Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/portafolio">Portafolio</Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/contacto">Contacto</Link>
+              <Link className="text-slate-700 transition hover:text-blue-600" to="/login">Iniciar sesión</Link>
             </nav>
           </div>
 
@@ -61,15 +43,20 @@ export default function Footer() {
             </h3>
 
             <div className="space-y-3 text-sm text-slate-700">
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Email</p>
-                <p className="mt-1 font-medium">contacto@soyuz.dev</p>
-              </div>
-
-              <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+              <a href="https://wa.me/524642070826" target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:ring-green-300">
                 <p className="text-xs uppercase tracking-wide text-slate-500">WhatsApp</p>
-                <p className="mt-1 font-medium">+52 1 464 207 2356</p>
-              </div>
+                <p className="mt-1 font-medium">464 207 0826</p>
+              </a>
+
+              <a href="https://web.facebook.com/jeho.castillo.2025/" target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:ring-blue-300">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Facebook</p>
+                <p className="mt-1 font-medium">Soyuz Dev</p>
+              </a>
+
+              <a href="https://www.instagram.com/jeho_yg/" target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:ring-pink-300">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Instagram</p>
+                <p className="mt-1 font-medium">@jeho_yg</p>
+              </a>
             </div>
 
             <Button as={Link} to="/contacto" variant="primary" className="mt-5 w-full">
@@ -79,8 +66,8 @@ export default function Footer() {
         </div>
 
         <div className="mx-auto flex max-w-7xl items-center justify-between border-t border-slate-200 px-4 py-4 text-xs text-slate-500 sm:px-6 lg:px-8">
-          <p>© 2026 Soyuz</p>
-          <p>SaaS corporativo · Bento Grid · Tailwind CSS</p>
+          <p>&copy; 2026 Soyuz</p>
+          <p>Soluciones digitales a medida</p>
         </div>
       </footer>
   );

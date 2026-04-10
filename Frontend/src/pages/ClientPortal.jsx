@@ -35,9 +35,9 @@ function formatDate(value) {
     }).format(date);
 }
 
-function formatMoney(amountCents, currency = "MXN") {
+function formatMoney(amountCents, currency = "USD") {
     const amount = Number(amountCents || 0) / 100;
-    return new Intl.NumberFormat("es-MX", {
+    return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency,
         maximumFractionDigits: 2,
@@ -195,7 +195,7 @@ function ErrorBlock({ message }) {
         <div className="rounded-2xl bg-red-50 p-5 ring-1 ring-red-200">
             <p className="text-sm font-semibold text-red-700">No se pudo cargar el portal</p>
             <p className="mt-2 text-sm leading-6 text-red-600">
-                {message || "Ocurrió un error inesperado al consultar la API del portal."}
+                {message || "Ocurrió un error inesperado al cargar tu portal."}
             </p>
         </div>
     );
@@ -470,8 +470,8 @@ export default function ClientPortal() {
                                 entregados, garantía de mantenimiento y estado de suscripción.
                             </p>
                             <p className="mt-3 text-sm text-slate-500">
-                                Sesión activa como{" "}
-                                <span className="font-medium text-slate-700">{user?.email || "cliente"}</span>.
+                                Hola,{" "}
+                                <span className="font-medium text-slate-700">{user?.email || "cliente"}</span> 👋
                             </p>
                         </div>
 
@@ -500,11 +500,10 @@ export default function ClientPortal() {
                     <div className="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
                         <div className="rounded-2xl bg-amber-50 p-5 ring-1 ring-amber-200">
                             <p className="text-sm font-semibold text-amber-800">
-                                Estructura del portal aún no finalizada
+                                Tu portal se está configurando
                             </p>
                             <p className="mt-2 text-sm leading-6 text-amber-700">
-                                La API respondió correctamente, pero la base del portal todavía no está
-                                completamente migrada en backend.
+                                Estamos preparando tu espacio. En breve podrás ver toda tu información aquí.
                             </p>
                         </div>
                     </div>
@@ -697,7 +696,7 @@ export default function ClientPortal() {
                             <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                                 <p className="text-sm font-semibold text-slate-900">Garantía no vinculada aún</p>
                                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                                    La garantía se activará cuando el backend relacione una entrega real con
+                                    La garantía se activará cuando se registre una entrega real con
                                     su fecha de despliegue y vencimiento.
                                 </p>
                                 <div className="mt-4 flex flex-wrap gap-2">

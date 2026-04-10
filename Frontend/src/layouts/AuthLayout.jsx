@@ -18,13 +18,9 @@ export default function AuthLayout() {
                 <div className="grid h-11 w-11 place-items-center rounded-2xl bg-slate-50 shadow-sm ring-1 ring-slate-200">
                   <span className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_0_6px_rgba(34,211,238,0.15)]" />
                 </div>
-
                 <div>
                   <p className="text-lg font-semibold tracking-tight text-blue-600">
                     Soyuz Access
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Inicio de sesión unificado para CRM interno y portal de cliente.
                   </p>
                 </div>
               </div>
@@ -32,45 +28,33 @@ export default function AuthLayout() {
               <div className="mt-8 grid gap-4">
                 <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                   <p className="text-sm font-semibold text-slate-900">
-                    Acceso por roles
+                    Acceso rápido y seguro
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Un solo login público. El sistema detecta tu rol y te redirige
-                    automáticamente al entorno correcto.
+                    Inicia sesión con tu correo y contraseña. Te llevamos
+                    directo a tu panel.
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                   <p className="text-sm font-semibold text-slate-900">
-                    Admin y cliente
+                    Tu espacio personal
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Si eres <span className="font-medium text-slate-800">admin</span>,
-                    entras al CRM. Si eres <span className="font-medium text-slate-800">user</span>,
-                    entras al portal del cliente.
+                    Revisa el avance de tus proyectos, descarga archivos
+                    y gestiona tus solicitudes de soporte.
                   </p>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                   <p className="text-sm font-semibold text-slate-900">
-                    Seguridad y continuidad
+                    Seguridad garantizada
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Validación estricta, control de sesión y una sola puerta de entrada
-                    pública para preparar Soyuz como SaaS.
+                    Tus datos están protegidos con cifrado de nivel
+                    empresarial en todo momento.
                   </p>
                 </div>
-              </div>
-
-              <div className="mt-8 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
-                <p className="text-xs font-medium text-slate-500">
-                  Sprint 9 · Auth unificado
-                </p>
-                <p className="mt-2 text-sm text-slate-700">
-                  La landing pública se mantiene intacta. Solo se sustituye el acceso
-                  visible de “Admin” por “Iniciar sesión” y la redirección final se
-                  resuelve por JWT.
-                </p>
               </div>
             </div>
 

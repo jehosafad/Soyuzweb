@@ -67,9 +67,9 @@ function formatDate(value) {
     }).format(date);
 }
 
-function formatMoney(amountCents, currency = "MXN") {
+function formatMoney(amountCents, currency = "USD") {
     const amount = Number(amountCents || 0) / 100;
-    return new Intl.NumberFormat("es-MX", {
+    return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency,
         maximumFractionDigits: 2,
@@ -436,7 +436,7 @@ export default function AdminDashboard() {
 
             setStatus("success");
         } catch (err) {
-            setError(err.message || "No se pudo cargar el CRM.");
+            setError(err.message || "No se pudo cargar el panel.");
             setStatus("error");
         }
     }
@@ -478,10 +478,10 @@ export default function AdminDashboard() {
                 throw new Error(data?.message || `Error HTTP ${response.status}`);
             }
 
-            setActionSuccess("Lead actualizado correctamente.");
+            setActionSuccess("Contacto actualizado correctamente.");
             await loadAllData();
         } catch (err) {
-            setActionError(err.message || "No se pudo actualizar el lead.");
+            setActionError(err.message || "No se pudo actualizar el contacto.");
         } finally {
             setSavingId(null);
         }
@@ -908,13 +908,13 @@ export default function AdminDashboard() {
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-wide text-cyan-600">
-                                Soyuz CRM Maestro
+                                Soyuz CRM
                             </p>
                             <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                                Operación comercial y soporte
+                                Panel de Administrador
                             </h1>
                             <p className="mt-3 text-sm text-slate-600">
-                                Sesión activa como {session?.user?.email || "admin"}.
+                                ¡Bienvenido, jefe! 👨‍💻
                             </p>
                         </div>
 
@@ -931,29 +931,29 @@ export default function AdminDashboard() {
 
                     <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
                         <MetricCard
-                            label="Leads"
+                            label="Nuevos Contactos"
                             value={summary.leads}
-                            hint="Mensajes comerciales recientes del sitio público."
+                            hint="Mensajes recibidos desde el sitio web."
                         />
                         <MetricCard
                             label="Clientes"
                             value={summary.clients}
-                            hint="Usuarios tipo cliente registrados."
+                            hint="Clientes registrados en la plataforma."
                         />
                         <MetricCard
                             label="Proyectos"
                             value={summary.projects}
-                            hint="Base activa de proyectos operables."
+                            hint="Proyectos activos en la plataforma."
                         />
                         <MetricCard
                             label="Tickets abiertos"
                             value={summary.openTickets}
-                            hint="Solicitudes nuevas pendientes de atención."
+                            hint="Solicitudes pendientes por atender."
                         />
                         <MetricCard
                             label="Premium activos"
                             value={summary.premiumClients}
-                            hint="Clientes con cobertura premium activa."
+                            hint="Clientes con plan Premium activo."
                         />
                     </div>
 
@@ -971,16 +971,16 @@ export default function AdminDashboard() {
 
                     {status === "loading" ? (
                         <div className="mt-6 rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
-                            <p className="text-sm font-semibold text-slate-900">Cargando CRM maestro</p>
+                            <p className="text-sm font-semibold text-slate-900">Cargando panel</p>
                             <p className="mt-2 text-sm text-slate-600">
-                                Estamos sincronizando leads, tickets, clientes, proyectos y cotizaciones.
+                                Estamos sincronizando contactos, solicitudes, clientes, proyectos y cotizaciones.
                             </p>
                         </div>
                     ) : null}
 
                     {status === "error" ? (
                         <div className="mt-6 rounded-2xl bg-red-50 p-5 ring-1 ring-red-200">
-                            <p className="text-sm font-semibold text-red-700">No se pudo cargar el CRM</p>
+                            <p className="text-sm font-semibold text-red-700">No se pudo cargar el panel</p>
                             <p className="mt-2 text-sm text-red-600">{error}</p>
                         </div>
                     ) : null}
@@ -989,14 +989,14 @@ export default function AdminDashboard() {
                         <>
                             <div className="mt-6 grid gap-6 lg:grid-cols-12">
                                 <SectionCard
-                                    title="Bandeja de leads"
-                                    description="Mensajes entrantes del sitio público y su estado comercial."
+                                    title="Bandeja de contactos"
+                                    description="Mensajes recibidos desde el sitio web."
                                     className="lg:col-span-4"
                                 >
                                     {leads.length === 0 ? (
                                         <EmptyBlock
-                                            title="Sin leads recientes"
-                                            description="Cuando entren formularios públicos, aparecerán aquí."
+                                            title="Sin contactos recientes"
+                                            description="Cuando recibas mensajes del sitio, aparecerán aquí."
                                         />
                                     ) : (
                                         <div className="space-y-4">
@@ -1007,7 +1007,7 @@ export default function AdminDashboard() {
                                                 >
                                                     <div className="flex flex-col gap-2">
                                                         <p className="text-sm font-semibold text-slate-900">
-                                                            {lead.subject || "Lead sin asunto"}
+                                                            {lead.subject || "Sin asunto"}
                                                         </p>
                                                         <div className="flex flex-wrap gap-2">
                                                             <StatusBadge>{lead.name || "Sin nombre"}</StatusBadge>
@@ -1297,7 +1297,7 @@ export default function AdminDashboard() {
                                                                             },
                                                                         }))
                                                                     }
-                                                                    placeholder="Descripción comercial del ajuste o modificación."
+                                                                    placeholder="Descripción del servicio o trabajo a realizar."
                                                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
                                                                 />
 
@@ -1321,7 +1321,7 @@ export default function AdminDashboard() {
                                                                                 },
                                                                             }))
                                                                         }
-                                                                        placeholder="Monto en centavos"
+                                                                        placeholder="Monto en USD (ej: 500)"
                                                                         className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
                                                                     />
 
@@ -1566,7 +1566,7 @@ export default function AdminDashboard() {
 
                                 <SectionCard
                                     title="Gestión de proyectos"
-                                    description="Actualización manual de estado, ETA y nota operativa."
+                                    description="Seguimiento de entrega y estado de cada proyecto."
                                     className="lg:col-span-6"
                                 >
                                     {projects.length === 0 ? (
@@ -1923,29 +1923,29 @@ export default function AdminDashboard() {
                                 </SectionCard>
 
                                 <SectionCard
-                                    title="Estado del Sprint 11"
-                                    description="CRM maestro operativo con flujo comercial, soporte, clientes, proyectos y cotización."
+                                    title="Resumen general"
+                                    description="Vista rápida del estado de tu negocio."
                                     className="lg:col-span-4"
                                 >
                                     <div className="space-y-3">
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
-                                            <p className="text-sm font-semibold text-slate-900">Tickets pendientes</p>
+                                            <p className="text-sm font-semibold text-slate-900">Solicitudes pendientes</p>
                                             <p className="mt-2 text-sm text-slate-600">
                                                 {summary.pendingTickets} en seguimiento.
                                             </p>
                                         </div>
 
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
-                                            <p className="text-sm font-semibold text-slate-900">Cotizaciones manuales</p>
+                                            <p className="text-sm font-semibold text-slate-900">Cotizaciones</p>
                                             <p className="mt-2 text-sm text-slate-600">
                                                 {quoteSummary.total} registradas, {quoteSummary.pending} pendientes.
                                             </p>
                                         </div>
 
                                         <div className="rounded-xl bg-white p-4 ring-1 ring-slate-200">
-                                            <p className="text-sm font-semibold text-slate-900">Siguiente sprint</p>
+                                            <p className="text-sm font-semibold text-slate-900">Clientes Premium</p>
                                             <p className="mt-2 text-sm text-slate-600">
-                                                Pagos, cartera, archivos admin y automatización comercial.
+                                                {summary.premiumClients} clientes con soporte y mantenimiento incluido.
                                             </p>
                                         </div>
                                     </div>

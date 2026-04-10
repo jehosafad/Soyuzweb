@@ -1081,4 +1081,305 @@ router.post("/quotes/from-support-request", async (req, res, next) => {
     }
 });
 
+// ─── Bot de Cotización Inteligente ────────────────────────────────────────────
+
+const QUOTE_BOT_PRICES = {
+    // service_category → base prices by complexity
+    "landing_page": { low: 150, medium: 350, high: 600 },
+    "web_app": { low: 500, medium: 1200, high: 3000 },
+    "ecommerce": { low: 800, medium: 2000, high: 5000 },
+    "mobile_app": { low: 1000, medium: 3000, high: 7000 },
+    "automation": { low: 200, medium: 600, high: 1500 },
+    "maintenance": { low: 50, medium: 150, high: 400 },
+    "design": { low: 100, medium: 300, high: 800 },
+    "consulting": { low: 80, medium: 200, high: 500 },
+    "other": { low: 100, medium: 400, high: 1000 },
+};
+
+router.post("/quote-bot", async (req, res, next) => {
+    try {
+        const serviceCategory = String(req.body?.serviceCategory || "other").trim().toLowerCase();
+        const complexity = String(req.body?.complexity || "medium").trim().toLowerCase();
+
+        const validComplexities = ["low", "medium", "high"];
+        if (!validComplexities.includes(complexity)) {
+            const err = new Error("La complejidad debe ser: low, medium o high.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const prices = QUOTE_BOT_PRICES[serviceCategory] || QUOTE_BOT_PRICES["other"];
+        const suggestedPrice = prices[complexity];
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: {
+                serviceCategory,
+                complexity,
+                suggestedPriceUsd: suggestedPrice,
+                currency: "USD",
+                note: `Precio sugerido basado en categoría "${serviceCategory}" y complejidad "${complexity}".`,
+            },
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+// ─── Dashboard Estadísticas Admin ─────────────────────────────────────────────
+
+router.get("/stats", async (req, res, next) => {
+    try {
+        const [
+            revenueResult,
+            monthlyRevenueResult,
+            projectStatusResult,
+            ticketTrendResult,
+            clientGrowthResult,
+        ] = await Promise.all([
+            // Total revenue from quotes paid
+            pool.query(`
+        SELECT
+          COALESCE(SUM(CASE WHEN amount_usd > 0 THEN amount_usd ELSE amount_cents / 100.0 * 0.058 END), 0)::numeric(12,2) AS total_revenue_usd,
+          COUNT(*) FILTER (WHERE status = 'paid')::int AS paid_count,
+          COUNT(*) FILTER (WHERE status = 'pending')::int AS pending_count
+        FROM public.quotes
+      `),
+
+            // Monthly revenue (last 6 months)
+            pool.query(`
+        SELECT
+          TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+          COALESCE(SUM(CASE WHEN amount_usd > 0 THEN amount_usd ELSE amount_cents / 100.0 * 0.058 END), 0)::numeric(12,2) AS revenue
+        FROM public.quotes
+        WHERE created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at) ASC
+      `),
+
+            // Project status distribution
+            pool.query(`
+        SELECT status, COUNT(*)::int AS count
+        FROM public.projects
+        GROUP BY status
+        ORDER BY count DESC
+      `),
+
+            // Ticket trend (last 30 days)
+            pool.query(`
+        SELECT
+          TO_CHAR(created_at::date, 'YYYY-MM-DD') AS day,
+          COUNT(*)::int AS count
+        FROM public.support_requests
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY created_at::date
+        ORDER BY created_at::date ASC
+      `),
+
+            // Client growth (last 6 months)
+            pool.query(`
+        SELECT
+          TO_CHAR(DATE_TRUNC('month', created_at), 'YYYY-MM') AS month,
+          COUNT(*)::int AS new_clients
+        FROM public.users
+        WHERE role = 'user' AND created_at >= NOW() - INTERVAL '6 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at) ASC
+      `),
+        ]);
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: {
+                revenue: revenueResult.rows[0] || { total_revenue_usd: 0, paid_count: 0, pending_count: 0 },
+                monthlyRevenue: monthlyRevenueResult.rows,
+                projectStatus: projectStatusResult.rows,
+                ticketTrend: ticketTrendResult.rows,
+                clientGrowth: clientGrowthResult.rows,
+            },
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+// ─── Portfolio Media CRUD ─────────────────────────────────────────────────────
+
+router.get("/projects/:id/media", async (req, res, next) => {
+    try {
+        const projectId = Number.parseInt(req.params.id, 10);
+
+        if (!Number.isInteger(projectId) || projectId <= 0) {
+            const err = new Error("El proyecto no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const result = await pool.query(
+            `
+      SELECT id, project_id, media_type, storage_key, original_name, caption, sort_order, created_at
+      FROM public.portfolio_media
+      WHERE project_id = $1
+      ORDER BY sort_order ASC, created_at ASC
+      `,
+            [projectId]
+        );
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: result.rows,
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+router.post(
+    "/projects/:id/media",
+    (req, res, next) => {
+        upload.single("media")(req, res, (err) => {
+            if (err) {
+                err.statusCode = err.statusCode || 400;
+                return next(err);
+            }
+            return next();
+        });
+    },
+    async (req, res, next) => {
+        try {
+            const projectId = Number.parseInt(req.params.id, 10);
+            const caption = String(req.body?.caption || "").trim() || null;
+            const sortOrder = Number.parseInt(req.body?.sortOrder || "0", 10) || 0;
+
+            if (!Number.isInteger(projectId) || projectId <= 0) {
+                const err = new Error("El proyecto no es válido.");
+                err.statusCode = 400;
+                throw err;
+            }
+
+            if (!req.file) {
+                const err = new Error("No se recibió ningún archivo multimedia.");
+                err.statusCode = 400;
+                throw err;
+            }
+
+            // Determine media type from mime
+            const mime = req.file.mimetype || "";
+            let mediaType = "image";
+            if (mime.startsWith("video/")) mediaType = "video";
+
+            const projectCheck = await pool.query(
+                `SELECT id FROM public.projects WHERE id = $1 LIMIT 1`,
+                [projectId]
+            );
+
+            if (projectCheck.rowCount === 0) {
+                fs.unlink(req.file.path, () => {});
+                const err = new Error("El proyecto no existe.");
+                err.statusCode = 404;
+                throw err;
+            }
+
+            const result = await pool.query(
+                `
+        INSERT INTO public.portfolio_media (project_id, media_type, storage_key, original_name, caption, sort_order)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id, project_id, media_type, storage_key, original_name, caption, sort_order, created_at
+        `,
+                [projectId, mediaType, req.file.filename, req.file.originalname, caption, sortOrder]
+            );
+
+            return res.status(201).json({
+                ok: true,
+                requestId: req.id || null,
+                data: result.rows[0],
+                message: "Archivo multimedia agregado al portafolio.",
+            });
+        } catch (err) {
+            if (req.file?.path) fs.unlink(req.file.path, () => {});
+            return next(err);
+        }
+    }
+);
+
+router.delete("/projects/:id/media/:mediaId", async (req, res, next) => {
+    try {
+        const projectId = Number.parseInt(req.params.id, 10);
+        const mediaId = Number.parseInt(req.params.mediaId, 10);
+
+        if (!Number.isInteger(projectId) || projectId <= 0 || !Number.isInteger(mediaId) || mediaId <= 0) {
+            const err = new Error("Parámetros inválidos.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const result = await pool.query(
+            `DELETE FROM public.portfolio_media WHERE id = $1 AND project_id = $2 RETURNING id, storage_key`,
+            [mediaId, projectId]
+        );
+
+        if (result.rowCount === 0) {
+            const err = new Error("El archivo multimedia no existe.");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        const filePath = path.join(UPLOADS_DIR, result.rows[0].storage_key);
+        fs.unlink(filePath, () => {});
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: { deletedId: result.rows[0].id },
+            message: "Archivo multimedia eliminado.",
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+// ─── Actualizar descripción de portafolio del proyecto ────────────────────────
+
+router.patch("/projects/:id/portfolio", async (req, res, next) => {
+    try {
+        const projectId = Number.parseInt(req.params.id, 10);
+        const portfolioDescription = String(req.body?.portfolioDescription || "").trim() || null;
+        const portfolioUrl = String(req.body?.portfolioUrl || "").trim() || null;
+
+        if (!Number.isInteger(projectId) || projectId <= 0) {
+            const err = new Error("El proyecto no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const result = await pool.query(
+            `
+      UPDATE public.projects
+      SET portfolio_description = $2, portfolio_url = $3, updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, name, portfolio_description, portfolio_url, is_public
+      `,
+            [projectId, portfolioDescription, portfolioUrl]
+        );
+
+        if (result.rowCount === 0) {
+            const err = new Error("El proyecto no existe.");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: result.rows[0],
+            message: "Portafolio del proyecto actualizado.",
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
 module.exports = router;
