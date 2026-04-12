@@ -23,7 +23,7 @@ const corsOptions = {
         err.statusCode = 403;
         return cb(err);
     },
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Id"],
     exposedHeaders: ["X-Request-Id"],
     optionsSuccessStatus: 204,

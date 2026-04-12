@@ -42,6 +42,9 @@ app.use("/api", (req, res, next) => {
 app.get("/api/health", health);
 app.get("/api/ready", ready);
 
+// Ping para UptimeRobot — mantiene Render despierto
+app.get("/ping", (req, res) => res.status(200).json({ status: "ok", uptime: process.uptime() }));
+
 app.use("/api/contact", contactBurstLimiter, contactLimiter, contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);

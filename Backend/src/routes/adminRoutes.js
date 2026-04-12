@@ -643,6 +643,7 @@ router.get("/projects", async (req, res, next) => {
         p.description,
         p.delivery_eta,
         p.is_public,
+        p.is_featured,
         p.created_at,
         p.updated_at,
         latest.status AS latest_phase,
@@ -807,6 +808,41 @@ router.patch("/projects/:id/visibility", async (req, res, next) => {
             message: isPublic
                 ? "Proyecto ahora visible en el portafolio público."
                 : "Proyecto ocultado del portafolio público.",
+        });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+// PATCH /projects/:id/featured — toggle casos destacados
+router.patch("/projects/:id/featured", async (req, res, next) => {
+    try {
+        const projectId = Number.parseInt(req.params.id, 10);
+        const isFeatured = Boolean(req.body?.isFeatured);
+
+        if (!Number.isInteger(projectId) || projectId <= 0) {
+            const err = new Error("El proyecto no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+
+        const result = await pool.query(
+            `UPDATE public.projects SET is_featured = $2, updated_at = NOW() WHERE id = $1
+             RETURNING id, name, is_featured, is_public`,
+            [projectId, isFeatured]
+        );
+
+        if (result.rowCount === 0) {
+            const err = new Error("El proyecto no existe.");
+            err.statusCode = 404;
+            throw err;
+        }
+
+        return res.status(200).json({
+            ok: true,
+            requestId: req.id || null,
+            data: result.rows[0],
+            message: isFeatured ? "Proyecto ahora aparece en casos destacados." : "Proyecto quitado de casos destacados.",
         });
     } catch (err) {
         return next(err);
@@ -1016,6 +1052,58 @@ router.get("/files/:fileId/download", async (req, res, next) => {
     }
 });
 
+// ─── Helper: verificar cobertura del cliente ─────────────────────────────────
+
+async function checkClientCoverage(userId) {
+    // 1. ¿Tiene garantía activa?
+    const warrantyResult = await pool.query(
+        `SELECT w.id, w.ends_at FROM public.warranties w
+         INNER JOIN public.projects p ON p.id = w.project_id
+         WHERE p.user_id = $1 AND w.status = 'active' AND w.ends_at >= NOW()::date
+         ORDER BY w.ends_at DESC LIMIT 1`,
+        [userId]
+    );
+    const hasActiveWarranty = warrantyResult.rowCount > 0;
+    const warrantyEnds = warrantyResult.rows[0]?.ends_at || null;
+
+    // 2. ¿Tiene Premium activo?
+    const premiumResult = await pool.query(
+        `SELECT id, plan_name, ends_at FROM public.subscriptions
+         WHERE user_id = $1 AND LOWER(plan_name) = 'premium' AND status = 'active'
+         ORDER BY ends_at DESC LIMIT 1`,
+        [userId]
+    );
+    const hasPremium = premiumResult.rowCount > 0;
+
+    return {
+        canCharge: !hasActiveWarranty && !hasPremium,
+        hasActiveWarranty,
+        warrantyEnds,
+        hasPremium,
+        reason: hasActiveWarranty
+            ? `El cliente tiene garantía activa hasta ${warrantyEnds}. No se puede cobrar modificaciones ni soporte mientras esté cubierto.`
+            : hasPremium
+                ? "El cliente tiene suscripción Premium activa. Modificaciones y soporte están incluidos sin costo extra."
+                : null,
+    };
+}
+
+// GET /clients/:id/coverage — verificar si se puede cobrar al cliente
+router.get("/clients/:id/coverage", async (req, res, next) => {
+    try {
+        const userId = Number.parseInt(req.params.id, 10);
+        if (!Number.isInteger(userId) || userId <= 0) {
+            const err = new Error("El cliente no es válido.");
+            err.statusCode = 400;
+            throw err;
+        }
+        const coverage = await checkClientCoverage(userId);
+        return res.status(200).json({ ok: true, data: coverage });
+    } catch (err) {
+        return next(err);
+    }
+});
+
 // ─── Cotizaciones ─────────────────────────────────────────────────────────────
 
 router.get("/quotes", async (req, res, next) => {
@@ -1110,6 +1198,15 @@ router.post("/quotes/from-support-request", async (req, res, next) => {
         if (!sourceRequest) {
             const err = new Error("La solicitud origen no existe.");
             err.statusCode = 404;
+            throw err;
+        }
+
+        // Verificar cobertura — modificaciones/soporte NO se cobran si tiene garantía o Premium
+        // Solo el PROYECTO inicial se cobra siempre (eso va por quotes/direct)
+        const coverage = await checkClientCoverage(sourceRequest.user_id);
+        if (!coverage.canCharge) {
+            const err = new Error(coverage.reason);
+            err.statusCode = 403;
             throw err;
         }
 
@@ -1444,6 +1541,8 @@ router.delete("/projects/:id/media/:mediaId", async (req, res, next) => {
 router.patch("/projects/:id/portfolio", async (req, res, next) => {
     try {
         const projectId = Number.parseInt(req.params.id, 10);
+        const name = req.body?.name !== undefined ? String(req.body.name).trim() : null;
+        const description = req.body?.description !== undefined ? String(req.body.description).trim() : null;
         const portfolioDescription = String(req.body?.portfolioDescription || "").trim() || null;
         const portfolioUrl = String(req.body?.portfolioUrl || "").trim() || null;
 
@@ -1454,13 +1553,15 @@ router.patch("/projects/:id/portfolio", async (req, res, next) => {
         }
 
         const result = await pool.query(
-            `
-      UPDATE public.projects
-      SET portfolio_description = $2, portfolio_url = $3, updated_at = NOW()
-      WHERE id = $1
-      RETURNING id, name, portfolio_description, portfolio_url, is_public
-      `,
-            [projectId, portfolioDescription, portfolioUrl]
+            `UPDATE public.projects
+             SET portfolio_description = COALESCE($2, portfolio_description),
+                 portfolio_url = COALESCE($3, portfolio_url),
+                 name = COALESCE($4, name),
+                 description = COALESCE($5, description),
+                 updated_at = NOW()
+             WHERE id = $1
+             RETURNING id, name, description, portfolio_description, portfolio_url, is_public, is_featured`,
+            [projectId, portfolioDescription, portfolioUrl, name || null, description || null]
         );
 
         if (result.rowCount === 0) {
@@ -1520,6 +1621,8 @@ router.post("/quotes/direct", async (req, res, next) => {
             throw err;
         }
 
+        // NOTA: quotes/direct es para cobrar el PROYECTO inicial
+        // El cobro del proyecto SIEMPRE se permite, no importa cobertura ni Premium
         const result = await pool.query(
             `INSERT INTO public.quotes (user_id, project_id, title, description, amount_cents, amount_usd, currency, status, expires_at)
              VALUES ($1, $2, $3, $4, $5, $6, 'USD', 'pending', $7)

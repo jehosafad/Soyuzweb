@@ -44,9 +44,16 @@ const contactLimiter = makeLimiter({
     limit: env.RATE_LIMIT_CONTACT_LIMIT,
 });
 
+// Login (anti fuerza bruta — 5 intentos por ventana de 15 min)
+const loginLimiter = makeLimiter({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+});
+
 module.exports = {
     apiBurstLimiter,
     apiLimiter,
     contactBurstLimiter,
     contactLimiter,
+    loginLimiter,
 };

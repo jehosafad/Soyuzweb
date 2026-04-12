@@ -42,11 +42,11 @@ const envSchema = z.object({
     ADMIN_PASSWORD: z.string().min(8),
     ADMIN_ROLE: z.enum(["admin"]).default("admin"),
 
-    DB_HOST: z.string().min(1),
+    DB_HOST: z.string().min(1).optional().default("localhost"),
     DB_PORT: z.coerce.number().int().positive().default(5432),
-    DB_USER: z.string().min(1),
-    DB_PASSWORD: z.string().min(1),
-    DB_NAME: z.string().min(1),
+    DB_USER: z.string().min(1).optional().default("postgres"),
+    DB_PASSWORD: z.string().min(1).optional().default("postgres"),
+    DB_NAME: z.string().min(1).optional().default("soyuz_db"),
 
     DATABASE_URL: z.string().optional(),
 

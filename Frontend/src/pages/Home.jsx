@@ -1,9 +1,21 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Button from "../components/Button";
 import BentoCard from "../components/BentoCard";
 import SectionHeading from "../components/SectionHeading";
 
 export default function Home() {
+  const [featured, setFeatured] = useState([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/public/featured");
+        if (r.ok) { const d = await r.json(); setFeatured(d?.data || []); }
+      } catch {}
+    })();
+  }, []);
+
   console.log("Home se esta renderizando");
   return (
       <>
@@ -207,6 +219,44 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* CASOS DESTACADOS */}
+        {featured.length > 0 && (
+            <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+              <SectionHeading
+                  eyebrow="Casos destacados"
+                  title="Proyectos reales de nuestros clientes"
+                  description="Cada proyecto representa un cliente real con resultados medibles."
+              />
+              <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {featured.map((p) => (
+                    <Link key={p.id} to="/portafolio" className="group rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md hover:ring-blue-200">
+                      {p.media && JSON.parse(typeof p.media === "string" ? p.media : "[]").length > 0 ? (
+                          <div className="h-40 rounded-2xl bg-slate-100 overflow-hidden mb-4">
+                            <div className="h-full w-full flex items-center justify-center text-sm text-slate-400">
+                              🖼 {JSON.parse(typeof p.media === "string" ? p.media : "[]")[0]?.caption || "Multimedia"}
+                            </div>
+                          </div>
+                      ) : (
+                          <div className="h-40 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mb-4">
+                            <span className="grid h-14 w-14 place-items-center rounded-2xl overflow-hidden ring-1 ring-slate-200">
+                              <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
+                            </span>
+                          </div>
+                      )}
+                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">{p.name}</h3>
+                      <p className="mt-1 text-sm text-slate-500 line-clamp-2">{p.portfolio_description || p.description || ""}</p>
+                      <div className="mt-3 flex gap-2">
+                        <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs text-slate-600">{p.service_type}</span>
+                      </div>
+                    </Link>
+                ))}
+              </div>
+              <div className="mt-8 text-center">
+                <Button as={Link} to="/portafolio" variant="secondary">Ver todos los proyectos</Button>
+              </div>
+            </section>
+        )}
 
         {/* CTA FINAL */}
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">

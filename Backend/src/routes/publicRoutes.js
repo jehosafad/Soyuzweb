@@ -19,6 +19,7 @@ router.get("/portfolio", async (req, res, next) => {
         p.portfolio_description,
         p.portfolio_url,
         p.status,
+        p.is_featured,
         p.updated_at,
         COALESCE(media.items, '[]'::json) AS media
       FROM public.projects p
@@ -44,6 +45,36 @@ router.get("/portfolio", async (req, res, next) => {
             ok: true,
             data: result.rows,
         });
+    } catch (err) {
+        return next(err);
+    }
+});
+
+/**
+ * GET /api/public/featured
+ * Devuelve los proyectos marcados como destacados para la landing.
+ */
+router.get("/featured", async (req, res, next) => {
+    try {
+        const result = await pool.query(`
+      SELECT
+        p.id, p.name, p.service_type, p.description,
+        p.portfolio_description, p.portfolio_url, p.status, p.updated_at,
+        COALESCE(media.items, '[]'::json) AS media
+      FROM public.projects p
+      LEFT JOIN LATERAL (
+        SELECT json_agg(
+          json_build_object('id', pm.id, 'media_type', pm.media_type, 'storage_key', pm.storage_key, 'caption', pm.caption)
+          ORDER BY pm.sort_order ASC
+        ) AS items
+        FROM public.portfolio_media pm WHERE pm.project_id = p.id
+      ) media ON TRUE
+      WHERE p.is_public = true AND p.is_featured = true
+      ORDER BY p.updated_at DESC
+      LIMIT 6
+    `);
+
+        return res.status(200).json({ ok: true, data: result.rows });
     } catch (err) {
         return next(err);
     }
