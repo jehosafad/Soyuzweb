@@ -5,11 +5,11 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://soyuz-api.onrender.com/api/:path*"
+      "destination": "https://soyuzweb.onrender.com/api/:path*"
     },
     {
       "source": "/ping",
-      "destination": "https://soyuz-api.onrender.com/ping"
+      "destination": "https://soyuzweb.onrender.com/ping"
     }
   ]
 }
