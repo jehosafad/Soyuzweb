@@ -4,6 +4,21 @@ import Button from "../components/Button";
 import BentoCard from "../components/BentoCard";
 import SectionHeading from "../components/SectionHeading";
 
+const SHOWCASE_PROJECTS = [
+  {
+    id: "cetis",
+    name: "Plataforma Educativa CETIS",
+    videoUrl: null,
+    implementations: ["Gestión académica", "Portal de alumnos y docentes", "Control de asistencia", "React + Node.js + PostgreSQL"],
+  },
+  {
+    id: "entremaletas",
+    name: "EntreMaletas",
+    videoUrl: null,
+    implementations: ["App web + móvil multiplataforma", "Bitácoras de viaje con fotos", "Sistema de roles (usuario/admin)", "Feed en tiempo real", "React + Node.js + PostgreSQL"],
+  },
+];
+
 export default function Home() {
   const [featured, setFeatured] = useState([]);
 
@@ -29,7 +44,7 @@ export default function Home() {
                 </div>
 
                 <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-                  <span className="text-blue-600">Agencia Soyuz</span>
+                  <span className="text-cyan-500">Agencia Soyuz</span>
                 </h1>
                 <p className="mt-4 text-lg text-slate-600">
                   Automatización y desarrollo web con estética corporativa,
@@ -221,50 +236,66 @@ export default function Home() {
         </section>
 
         {/* CASOS DESTACADOS */}
-        {featured.length > 0 && (
-            <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-              <SectionHeading
-                  eyebrow="Casos destacados"
-                  title="Proyectos reales de nuestros clientes"
-                  description="Cada proyecto representa un cliente real con resultados medibles."
-              />
-              <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {featured.map((p) => (
-                    <Link key={p.id} to="/portafolio" className="group rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md hover:ring-blue-200">
-                      {p.media && JSON.parse(typeof p.media === "string" ? p.media : "[]").length > 0 ? (
-                          <div className="h-40 rounded-2xl bg-slate-100 overflow-hidden mb-4">
-                            <div className="h-full w-full flex items-center justify-center text-sm text-slate-400">
-                              🖼 {JSON.parse(typeof p.media === "string" ? p.media : "[]")[0]?.caption || "Multimedia"}
-                            </div>
-                          </div>
-                      ) : (
-                          <div className="h-40 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 flex items-center justify-center mb-4">
-                            <span className="grid h-14 w-14 place-items-center rounded-2xl overflow-hidden ring-1 ring-slate-200">
-                              <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
-                            </span>
-                          </div>
-                      )}
-                      <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition">{p.name}</h3>
-                      <p className="mt-1 text-sm text-slate-500 line-clamp-2">{p.portfolio_description || p.description || ""}</p>
-                      <div className="mt-3 flex gap-2">
-                        <span className="rounded-full bg-slate-100 px-3 py-0.5 text-xs text-slate-600">{p.service_type}</span>
-                      </div>
-                    </Link>
-                ))}
-              </div>
-              <div className="mt-8 text-center">
-                <Button as={Link} to="/portafolio" variant="secondary">Ver todos los proyectos</Button>
-              </div>
-            </section>
-        )}
-
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+          <SectionHeading
+              eyebrow="Casos destacados"
+              title="Proyectos reales de nuestros clientes"
+              description="Cada proyecto representa un cliente real con resultados medibles."
+          />
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {SHOWCASE_PROJECTS.map((p) => (
+                <Link key={p.id} to="/portafolio" className="group flex flex-col rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden transition hover:shadow-lg hover:ring-cyan-300">
+                  <div className="relative h-48 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center overflow-hidden">
+                    {p.videoUrl ? (
+                        <div className="flex flex-col items-center gap-2 text-white/80">
+                          <span className="grid h-14 w-14 place-items-center rounded-full bg-cyan-400/20 ring-2 ring-cyan-400/40 text-2xl">▶</span>
+                          <span className="text-xs text-slate-400">Ver video</span>
+                        </div>
+                    ) : (
+                        <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-20 w-20 rounded-2xl object-cover ring-2 ring-white/20 opacity-80" />
+                    )}
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition">{p.name}</h3>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {p.implementations.map((imp) => (
+                          <span key={imp} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{imp}</span>
+                      ))}
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <span className="text-xs font-semibold text-cyan-600 group-hover:underline">Ver proyecto →</span>
+                    </div>
+                  </div>
+                </Link>
+            ))}
+            {featured.map((p) => (
+                <Link key={p.id} to="/portafolio" className="group flex flex-col rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden transition hover:shadow-lg hover:ring-cyan-300">
+                  <div className="relative h-48 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+                    <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-20 w-20 rounded-2xl object-cover ring-2 ring-white/20 opacity-80" />
+                  </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <h3 className="text-lg font-bold text-slate-900 group-hover:text-cyan-600 transition">{p.name}</h3>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <span className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{p.service_type || "Desarrollo"}</span>
+                    </div>
+                    <div className="mt-4 flex justify-end">
+                      <span className="text-xs font-semibold text-cyan-600 group-hover:underline">Ver proyecto →</span>
+                    </div>
+                  </div>
+                </Link>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Button as={Link} to="/portafolio" variant="secondary">Ver todos los proyectos</Button>
+          </div>
+        </section>
         {/* CTA FINAL */}
         <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
           <div className="rounded-3xl bg-white p-8 sm:p-12 shadow-sm ring-1 ring-slate-200">
             <div className="grid gap-6 lg:grid-cols-12 items-center">
               <div className="lg:col-span-8">
                 <h3 className="text-2xl font-bold tracking-tight text-slate-900">
-                  ¿Listo para lanzar algo <span className="text-blue-600">serio</span>?
+                  ¿Listo para lanzar algo <span className="text-cyan-500">serio</span>?
                 </h3>
                 <p className="mt-2 text-slate-600">
                   Hagamos una web premium o un sistema a medida. UI impecable hoy; backend sólido en Fase 2.

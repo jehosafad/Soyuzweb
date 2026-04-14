@@ -127,6 +127,34 @@ export default function Portfolio() {
   const [projectMedia, setProjectMedia] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [mediaCaption, setMediaCaption] = useState("");
+  const [editDrafts, setEditDrafts] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  async function saveProjectInfo(projectId) {
+    const draft = editDrafts[projectId];
+    if (!draft) return;
+    setSaving(true);
+    try {
+      const impArr = (draft.implementations || "").split(",").map(s => s.trim()).filter(Boolean);
+      const r = await fetch(`/api/admin/projects/${projectId}/portfolio`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${getToken()}` },
+        body: JSON.stringify({
+          name: draft.name || undefined,
+          description: draft.description || undefined,
+          portfolioDescription: draft.portfolioDescription || undefined,
+          implementations: impArr.length > 0 ? impArr : undefined,
+        }),
+      });
+      if (r.ok) {
+        const pr = await fetch("/api/admin/projects", { headers: { Authorization: `Bearer ${getToken()}` } });
+        if (pr.ok) { const d = await pr.json(); setAdminProjects(d?.data?.items || []); }
+        const pub = await fetch("/api/public/portfolio");
+        if (pub.ok) { const d = await pub.json(); setProjects(d?.data || []); }
+      }
+    } catch {}
+    setSaving(false);
+  }
 
   async function loadMedia(projectId) {
     try {
@@ -248,45 +276,67 @@ export default function Portfolio() {
                                   className={`rounded-lg px-2 py-1 text-[11px] font-semibold transition ${p.is_featured ? "bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30" : "bg-slate-700 text-slate-400 ring-1 ring-slate-600"} disabled:opacity-50`}>
                             {p.is_featured ? "⭐ Destacado" : "No destacado"}
                           </button>
-                          <button onClick={() => { if (editingProjectId === p.id) { setEditingProjectId(null); } else { setEditingProjectId(p.id); loadMedia(p.id); } }}
+                          <button onClick={() => { if (editingProjectId === p.id) { setEditingProjectId(null); } else { setEditingProjectId(p.id); loadMedia(p.id); setEditDrafts(prev => ({ ...prev, [p.id]: { name: p.name || "", description: p.description || "", portfolioDescription: p.portfolio_description || "", implementations: (p.implementations || []).join(", ") } })); } }}
                                   className="rounded-lg bg-cyan-400/20 px-2 py-1 text-[11px] font-semibold text-cyan-400 ring-1 ring-cyan-400/30 hover:bg-cyan-400/30">
-                            {editingProjectId === p.id ? "Cerrar" : "📷 Media"}
+                            {editingProjectId === p.id ? "Cerrar" : "✏️ Editar"}
                           </button>
                         </div>
                       </div>
                       {editingProjectId === p.id && (
-                          <div className="border-t border-white/10 bg-white/5 p-4 space-y-3">
-                            {projectMedia.length > 0 && (
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                  {projectMedia.map((m) => (
-                                      <div key={m.id} className="relative rounded-lg overflow-hidden ring-1 ring-white/20 group">
-                                        {m.media_type === "image" ? (
-                                            <div className="h-20 bg-slate-800 flex items-center justify-center text-xs text-slate-400">🖼 {m.original_name}</div>
-                                        ) : (
-                                            <div className="h-20 flex items-center justify-center bg-slate-800 text-xs text-slate-400">🎬 {m.original_name}</div>
-                                        )}
-                                        <p className="px-2 py-1 text-[10px] text-slate-300 truncate">{m.caption || m.original_name}</p>
-                                        <button onClick={() => deleteMedia(p.id, m.id)}
-                                                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition">×</button>
-                                      </div>
-                                  ))}
-                                </div>
-                            )}
-                            <div className="flex flex-wrap items-end gap-2">
-                              <div className="flex-1 min-w-[150px]">
-                                <label className="block text-[10px] font-semibold text-slate-400 mb-1">Foto o video</label>
-                                <input type="file" id={`media-file-${p.id}`} accept="image/*,video/*"
-                                       className="w-full rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-cyan-400/20 file:px-2 file:py-1 file:text-xs file:text-cyan-400" />
-                              </div>
-                              <div className="flex-1 min-w-[100px]">
-                                <label className="block text-[10px] font-semibold text-slate-400 mb-1">Descripción</label>
-                                <input type="text" value={mediaCaption} onChange={(e) => setMediaCaption(e.target.value)} placeholder="Ej: Vista principal"
-                                       className="w-full rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300 ring-1 ring-white/10" />
-                              </div>
-                              <button onClick={() => handleMediaUpload(p.id)} disabled={uploading}
-                                      className="rounded-lg bg-cyan-400 px-4 py-1.5 text-xs font-bold text-slate-900 hover:bg-cyan-300 disabled:opacity-50">
-                                {uploading ? "Subiendo..." : "Subir"}
+                          <div className="border-t border-white/10 bg-white/5 p-4 space-y-4">
+                            {/* Editar info */}
+                            <div className="space-y-2">
+                              <p className="text-[10px] font-bold uppercase text-cyan-400 tracking-wide">Información del proyecto</p>
+                              <input type="text" value={editDrafts[p.id]?.name ?? ""}
+                                     onChange={(e) => setEditDrafts(prev => ({ ...prev, [p.id]: { ...(prev[p.id] || {}), name: e.target.value } }))}
+                                     placeholder="Título" className="w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white ring-1 ring-white/10" />
+                              <textarea rows={2} value={editDrafts[p.id]?.description ?? ""}
+                                        onChange={(e) => setEditDrafts(prev => ({ ...prev, [p.id]: { ...(prev[p.id] || {}), description: e.target.value } }))}
+                                        placeholder="Descripción del proyecto" className="w-full rounded-lg bg-slate-800 px-3 py-2 text-sm text-white ring-1 ring-white/10" />
+                              <input type="text" value={editDrafts[p.id]?.implementations ?? ""}
+                                     onChange={(e) => setEditDrafts(prev => ({ ...prev, [p.id]: { ...(prev[p.id] || {}), implementations: e.target.value } }))}
+                                     placeholder="Implementaciones (separar con comas: React, Node.js, PostgreSQL)" className="w-full rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300 ring-1 ring-white/10" />
+                              <button onClick={() => saveProjectInfo(p.id)} disabled={saving}
+                                      className="rounded-lg bg-cyan-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-cyan-700 disabled:opacity-50">
+                                {saving ? "Guardando..." : "Guardar cambios"}
                               </button>
+                            </div>
+
+                            {/* Media */}
+                            <div>
+                              <p className="text-[10px] font-bold uppercase text-cyan-400 tracking-wide mb-2">Fotos y videos ({projectMedia.length})</p>
+                              {projectMedia.length > 0 && (
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                    {projectMedia.map((m) => (
+                                        <div key={m.id} className="relative rounded-lg overflow-hidden ring-1 ring-white/20 group">
+                                          {m.media_type === "image" ? (
+                                              <div className="h-20 bg-slate-800 flex items-center justify-center text-xs text-slate-400">🖼 {m.original_name}</div>
+                                          ) : (
+                                              <div className="h-20 flex items-center justify-center bg-slate-800 text-xs text-slate-400">🎬 {m.original_name}</div>
+                                          )}
+                                          <p className="px-2 py-1 text-[10px] text-slate-300 truncate">{m.caption || m.original_name}</p>
+                                          <button onClick={() => deleteMedia(p.id, m.id)}
+                                                  className="absolute top-1 right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition">×</button>
+                                        </div>
+                                    ))}
+                                  </div>
+                              )}
+                              <div className="flex flex-wrap items-end gap-2">
+                                <div className="flex-1 min-w-[150px]">
+                                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">Foto o video</label>
+                                  <input type="file" id={`media-file-${p.id}`} accept="image/*,video/*"
+                                         className="w-full rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300 file:mr-2 file:rounded file:border-0 file:bg-cyan-400/20 file:px-2 file:py-1 file:text-xs file:text-cyan-400" />
+                                </div>
+                                <div className="flex-1 min-w-[100px]">
+                                  <label className="block text-[10px] font-semibold text-slate-400 mb-1">Descripción</label>
+                                  <input type="text" value={mediaCaption} onChange={(e) => setMediaCaption(e.target.value)} placeholder="Ej: Vista principal"
+                                         className="w-full rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-300 ring-1 ring-white/10" />
+                                </div>
+                                <button onClick={() => handleMediaUpload(p.id)} disabled={uploading}
+                                        className="rounded-lg bg-cyan-400 px-4 py-1.5 text-xs font-bold text-slate-900 hover:bg-cyan-300 disabled:opacity-50">
+                                  {uploading ? "Subiendo..." : "Subir"}
+                                </button>
+                              </div>
                             </div>
                           </div>
                       )}
@@ -295,6 +345,51 @@ export default function Portfolio() {
               </div>
             </div>
         )}
+
+        {/* ── Proyectos destacados (estáticos) ── */}
+        <div className="mt-10 grid gap-8 lg:grid-cols-2">
+          {/* CETIS */}
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="h-52 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <img src="/logo-soyuz.jpeg" alt="CETIS" className="h-20 w-20 rounded-2xl object-cover ring-2 ring-white/20 opacity-80" />
+            </div>
+            <div className="p-6 space-y-3">
+              <h3 className="text-xl font-bold text-slate-900">Plataforma Educativa CETIS</h3>
+              <p className="text-sm text-slate-600">
+                Sistema integral de gestión académica diseñado para instituciones educativas. Permite la administración de alumnos, docentes, materias, calificaciones y asistencia desde una interfaz web moderna y accesible. Incluye portal de alumnos para consulta de calificaciones y portal administrativo con reportes en tiempo real.
+              </p>
+              <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Gestión académica", "Portal de alumnos y docentes", "Control de asistencia", "Reportes en tiempo real", "React", "Node.js", "PostgreSQL"].map((t) => (
+                      <span key={t} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* EntreMaletas */}
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="h-52 bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+              <img src="/logo-soyuz.jpeg" alt="EntreMaletas" className="h-20 w-20 rounded-2xl object-cover ring-2 ring-white/20 opacity-80" />
+            </div>
+            <div className="p-6 space-y-3">
+              <h3 className="text-xl font-bold text-slate-900">EntreMaletas</h3>
+              <p className="text-sm text-slate-600">
+                Aplicación multiplataforma para el registro y exploración de experiencias de viaje en forma de bitácoras digitales enriquecidas con texto, fotografías e información de lugar. Disponible como aplicación web y móvil para Android e iOS, con sistema de roles (usuario/administrador), feed de viajes en tiempo real y panel de administración completo.
+              </p>
+              <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["App web + móvil", "Bitácoras de viaje con fotos", "Sistema de roles", "Feed en tiempo real", "Panel de administración", "React", "Node.js", "PostgreSQL"].map((t) => (
+                      <span key={t} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Estado de carga */}
         {status === "loading" ? (
@@ -364,6 +459,17 @@ export default function Portfolio() {
                                     </div>
                                 ))}
                               </div>
+
+                              {featured.implementations && featured.implementations.length > 0 && (
+                                  <div className="mt-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {featured.implementations.map((imp) => (
+                                          <span key={imp} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{imp}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                              )}
 
                               <div className="mt-6 flex flex-col sm:flex-row gap-3">
                                 <Button as={Link} to="/contacto" variant="primary">
@@ -448,6 +554,14 @@ export default function Portfolio() {
                                                             : "Entregado"}
                                                     </span>
                                   </div>
+
+                                  {project.implementations && project.implementations.length > 0 && (
+                                      <div className="mt-3 flex flex-wrap gap-1">
+                                        {project.implementations.map((imp) => (
+                                            <span key={imp} className="rounded-full bg-cyan-50 px-2 py-0.5 text-[9px] font-medium text-cyan-700 ring-1 ring-cyan-200">{imp}</span>
+                                        ))}
+                                      </div>
+                                  )}
 
                                   <div className="mt-6">
                                     <Button

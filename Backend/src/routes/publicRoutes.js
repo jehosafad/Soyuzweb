@@ -20,6 +20,7 @@ router.get("/portfolio", async (req, res, next) => {
         p.portfolio_url,
         p.status,
         p.is_featured,
+        p.implementations,
         p.updated_at,
         COALESCE(media.items, '[]'::json) AS media
       FROM public.projects p
@@ -59,7 +60,7 @@ router.get("/featured", async (req, res, next) => {
         const result = await pool.query(`
       SELECT
         p.id, p.name, p.service_type, p.description,
-        p.portfolio_description, p.portfolio_url, p.status, p.updated_at,
+        p.portfolio_description, p.portfolio_url, p.status, p.implementations, p.updated_at,
         COALESCE(media.items, '[]'::json) AS media
       FROM public.projects p
       LEFT JOIN LATERAL (

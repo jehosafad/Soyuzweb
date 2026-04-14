@@ -170,7 +170,7 @@ export default function Planes() {
                 </p>
 
                 {selectedTier && !error && (
-                    <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-center text-sm text-blue-800 ring-1 ring-blue-200">
+                    <div className="mt-6 rounded-2xl bg-blue-50 p-4 text-center text-sm text-blue-800 ring-1 ring-cyan-200">
                         Seleccionaste: <strong>{premiumTiers.find(t => t.id === selectedTier)?.name}</strong>
                     </div>
                 )}
@@ -190,15 +190,15 @@ export default function Planes() {
                                 selectedTier === tier.id
                                     ? "bg-slate-900 text-white ring-cyan-400 ring-2"
                                     : tier.highlighted
-                                        ? "bg-white ring-blue-200 hover:ring-blue-400"
+                                        ? "bg-white ring-cyan-200 hover:ring-cyan-400"
                                         : "bg-white ring-slate-200 hover:ring-slate-300"
                             }`}
                             onClick={() => setSelectedTier(tier.id)}
                         >
                             {tier.highlighted && selectedTier !== tier.id && (
-                                <span className="mb-3 inline-block rounded-full bg-blue-100 px-3 py-0.5 text-[10px] font-bold text-blue-700">Popular</span>
+                                <span className="mb-3 inline-block rounded-full bg-cyan-100 px-3 py-0.5 text-[10px] font-bold text-cyan-700">Popular</span>
                             )}
-                            <p className={`text-xs font-semibold uppercase tracking-wide ${selectedTier === tier.id ? "text-cyan-400" : "text-blue-600"}`}>
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${selectedTier === tier.id ? "text-cyan-400" : "text-cyan-600"}`}>
                                 {tier.name}
                             </p>
                             <div className="mt-3">
@@ -228,7 +228,7 @@ export default function Planes() {
                                 className={`mt-6 w-full rounded-xl py-3 text-sm font-bold transition disabled:opacity-50 ${
                                     selectedTier === tier.id
                                         ? "bg-cyan-400 text-slate-900 hover:bg-cyan-300"
-                                        : "bg-blue-600 text-white hover:bg-blue-700"
+                                        : "bg-cyan-600 text-white hover:bg-cyan-700"
                                 }`}
                             >
                                 {paying && selectedTier === tier.id ? "Procesando..." : isLoggedIn ? `Pagar $${tier.price}/mes` : "Crear cuenta y pagar"}
@@ -246,7 +246,7 @@ export default function Planes() {
 
             <div className="mt-12 rounded-2xl bg-slate-50 p-6 text-center ring-1 ring-slate-200">
                 <p className="text-sm text-slate-600">
-                    ¿Tienes dudas? <Link to="/contacto" className="font-semibold text-blue-600 hover:text-blue-700">Escríbenos</Link> y te asesoramos sin compromiso.
+                    ¿Tienes dudas? <Link to="/contacto" className="font-semibold text-cyan-600 hover:text-cyan-700">Escríbenos</Link> y te asesoramos sin compromiso.
                 </p>
             </div>
         </section>

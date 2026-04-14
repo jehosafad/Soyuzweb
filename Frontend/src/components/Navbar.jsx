@@ -62,7 +62,7 @@ export default function Navbar() {
 
     const navLinkClass = ({ isActive }) =>
         ["rounded-xl px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2",
-            isActive ? "bg-slate-50 text-blue-600" : "text-slate-700 hover:bg-slate-50 hover:text-blue-600"].join(" ");
+            isActive ? "bg-slate-50 text-cyan-600" : "text-slate-700 hover:bg-slate-50 hover:text-cyan-600"].join(" ");
 
     const portalPath = session ? resolvePrivatePath(session.user.role) : "/login";
 
@@ -75,7 +75,7 @@ export default function Navbar() {
                             <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
                         </span>
                         <span className="leading-tight">
-                            <span className="block text-base font-semibold tracking-tight text-blue-600">Soyuz</span>
+                            <span className="block text-base font-semibold tracking-tight text-cyan-600">Soyuz</span>
                             <span className="hidden text-xs text-slate-500 sm:block">Development &amp; Automation</span>
                         </span>
                     </Link>

@@ -644,6 +644,7 @@ router.get("/projects", async (req, res, next) => {
         p.delivery_eta,
         p.is_public,
         p.is_featured,
+        p.implementations,
         p.created_at,
         p.updated_at,
         latest.status AS latest_phase,
@@ -1545,6 +1546,7 @@ router.patch("/projects/:id/portfolio", async (req, res, next) => {
         const description = req.body?.description !== undefined ? String(req.body.description).trim() : null;
         const portfolioDescription = String(req.body?.portfolioDescription || "").trim() || null;
         const portfolioUrl = String(req.body?.portfolioUrl || "").trim() || null;
+        const implementations = Array.isArray(req.body?.implementations) ? req.body.implementations.map(s => String(s).trim()).filter(Boolean) : null;
 
         if (!Number.isInteger(projectId) || projectId <= 0) {
             const err = new Error("El proyecto no es válido.");
@@ -1558,10 +1560,11 @@ router.patch("/projects/:id/portfolio", async (req, res, next) => {
                  portfolio_url = COALESCE($3, portfolio_url),
                  name = COALESCE($4, name),
                  description = COALESCE($5, description),
+                 implementations = COALESCE($6, implementations),
                  updated_at = NOW()
              WHERE id = $1
-             RETURNING id, name, description, portfolio_description, portfolio_url, is_public, is_featured`,
-            [projectId, portfolioDescription, portfolioUrl, name || null, description || null]
+             RETURNING id, name, description, portfolio_description, portfolio_url, is_public, is_featured, implementations`,
+            [projectId, portfolioDescription, portfolioUrl, name || null, description || null, implementations]
         );
 
         if (result.rowCount === 0) {

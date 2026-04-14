@@ -9,7 +9,7 @@ export default function AuthLayout() {
           </Link>
           <div className="mt-8 grid items-stretch gap-8 lg:grid-cols-2">
             <div className="flex flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-slate-900 to-slate-800 p-10 shadow-sm ring-1 ring-slate-700">
-              <div className="grid h-24 w-24 place-items-center rounded-3xl overflow-hidden ring-2 ring-white/20 shadow-lg">
+              <div className="grid h-32 w-32 place-items-center rounded-3xl overflow-hidden ring-2 ring-white/20 shadow-lg">
                 <img src="/logo-soyuz.jpeg" alt="Soyuz" className="h-full w-full object-cover" />
               </div>
               <p className="mt-6 text-2xl font-bold tracking-tight text-white">Soyuz</p>
