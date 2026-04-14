@@ -86,8 +86,8 @@ function ProjectThumbnail({ media, name }) {
   if (video) {
     return (
         <video
-            className="h-full w-full object-cover"
-            muted
+            className="h-full w-full"
+            controls
             preload="metadata"
             playsInline
             poster={image ? mediaUrl(image.storage_key) : "/logo-soyuz.jpeg"}
@@ -561,6 +561,78 @@ export default function Portfolio() {
               </div>
             </div>
         )}
+
+        {/* ── 3 PROYECTOS DEFAULT (CETIS, EntreMaletas, Tienda de Zapatos) ────── */}
+        <div className="mt-10 grid gap-8 lg:grid-cols-3">
+          {/* CETIS */}
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
+              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src="/cetis.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div className="p-6 space-y-3">
+              <h3 className="text-xl font-bold text-slate-900">Plataforma Educativa CETIS</h3>
+              <p className="text-sm text-slate-600">
+                Sistema integral de gestión académica diseñado para instituciones educativas. Permite la administración de alumnos, docentes, materias, calificaciones y asistencia desde una interfaz web moderna y accesible.
+              </p>
+              <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Gestión académica", "Portal de alumnos y docentes", "Control de asistencia", "Reportes en tiempo real", "React", "Node.js", "PostgreSQL"].map((t) => (
+                      <span key={t} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* EntreMaletas */}
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
+              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src="/entremaletas.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div className="p-6 space-y-3">
+              <h3 className="text-xl font-bold text-slate-900">EntreMaletas</h3>
+              <p className="text-sm text-slate-600">
+                Aplicación multiplataforma para el registro y exploración de experiencias de viaje en forma de bitácoras digitales enriquecidas con texto, fotografías e información de lugar.
+              </p>
+              <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["App web + móvil", "Bitácoras de viaje con fotos", "Sistema de roles", "Feed en tiempo real", "Panel de administración", "React", "Node.js", "PostgreSQL"].map((t) => (
+                      <span key={t} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tienda de Zapatos */}
+          <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
+            <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
+              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src="/tiendadezapatos.mp4" type="video/mp4" />
+              </video>
+            </div>
+            <div className="p-6 space-y-3">
+              <h3 className="text-xl font-bold text-slate-900">Tienda de Zapatos</h3>
+              <p className="text-sm text-slate-600">
+                E-commerce moderno para venta de calzado con catálogo dinámico, carrito de compras y sistema de pagos integrado. Diseño responsive y panel de administración completo.
+              </p>
+              <div className="pt-2">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">Implementaciones</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {["Catálogo dinámico", "Carrito de compras", "Sistema de pagos", "Panel de administración", "Diseño responsive", "React", "Node.js", "PostgreSQL"].map((t) => (
+                      <span key={t} className="rounded-full bg-cyan-50 px-2.5 py-0.5 text-[10px] font-medium text-cyan-700 ring-1 ring-cyan-200">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Estado de carga */}
         {status === "loading" && (
