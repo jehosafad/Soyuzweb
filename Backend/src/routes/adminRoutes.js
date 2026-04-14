@@ -1203,12 +1203,15 @@ router.post("/quotes/from-support-request", async (req, res, next) => {
         }
 
         // Verificar cobertura — modificaciones/soporte NO se cobran si tiene garantía o Premium
-        // Solo el PROYECTO inicial se cobra siempre (eso va por quotes/direct)
-        const coverage = await checkClientCoverage(sourceRequest.user_id);
-        if (!coverage.canCharge) {
-            const err = new Error(coverage.reason);
-            err.statusCode = 403;
-            throw err;
+        // El proyecto inicial SÍ se cobra siempre (admin marca isInitialProject=true)
+        const isInitialProject = Boolean(req.body?.isInitialProject);
+        if (!isInitialProject) {
+            const coverage = await checkClientCoverage(sourceRequest.user_id);
+            if (!coverage.canCharge) {
+                const err = new Error(coverage.reason);
+                err.statusCode = 403;
+                throw err;
+            }
         }
 
         const quoteResult = await pool.query(

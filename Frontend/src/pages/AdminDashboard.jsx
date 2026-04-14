@@ -606,6 +606,7 @@ export default function AdminDashboard() {
                     description: draft.description,
                     amountCents: Number.parseInt(draft.amountCents, 10),
                     expiresAt: draft.expiresAt || null,
+                    isInitialProject: Boolean(draft.isInitialProject),
                 }),
             });
 
@@ -1456,6 +1457,15 @@ export default function AdminDashboard() {
                                                                                     className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-cyan-400"
                                                                                 />
                                                                             </div>
+
+                                                                            <label className="flex items-center gap-2 mt-2">
+                                                                                <input type="checkbox" checked={Boolean(quoteDrafts[item.id]?.isInitialProject)}
+                                                                                       onChange={(e) => setQuoteDrafts((prev) => ({
+                                                                                           ...prev, [item.id]: { ...(prev[item.id] || { title:"", description:"", amountCents:"", expiresAt:"" }), isInitialProject: e.target.checked },
+                                                                                       }))}
+                                                                                       className="rounded border-slate-300" />
+                                                                                <span className="text-xs text-slate-600">Cobro de proyecto inicial (ignora cobertura)</span>
+                                                                            </label>
 
                                                                             <button
                                                                                 type="button"
