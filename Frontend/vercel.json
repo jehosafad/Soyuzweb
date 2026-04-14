@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/uploads/:path*",
+      "destination": "https://soyuz-api.onrender.com/uploads/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://soyuz-api.onrender.com/api/:path*"
     },
