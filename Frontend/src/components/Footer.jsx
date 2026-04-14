@@ -48,7 +48,7 @@ export default function Footer() {
                 <p className="mt-1 font-medium">464 207 0826</p>
               </a>
 
-              <a href="https://web.facebook.com/jeho.castillo.2025/" target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:ring-blue-300">
+              <a href="https://www.facebook.com/profile.php?id=61577281423509" target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 transition hover:ring-blue-300">
                 <p className="text-xs uppercase tracking-wide text-slate-500">Facebook</p>
                 <p className="mt-1 font-medium">Soyuz Dev</p>
               </a>

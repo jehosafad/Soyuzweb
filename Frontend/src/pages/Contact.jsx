@@ -40,7 +40,7 @@ export default function Contact() {
 
         try {
             // Como configuraste CORS para el puerto 5173, esto conectará sin problemas
-            const res = await fetch("http://localhost:4000/api/contact", {
+            const res = await fetch("/api/contact", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
