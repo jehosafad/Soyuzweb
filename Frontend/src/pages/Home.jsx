@@ -4,10 +4,14 @@ import Button from "../components/Button";
 import BentoCard from "../components/BentoCard";
 import SectionHeading from "../components/SectionHeading";
 
+const CETIS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/cetis.mp4";
+const ENTREMALETAS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/entremaletas.mp4";
+const TIENDA_ZAPATOS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/tiendadezapatos.mp4";
+
 /* ── Helper: URL de media subido via admin ──────────────────────────────────── */
 function mediaUrl(storageKey) {
   if (!storageKey) return null;
-  return `/uploads/${storageKey}`;
+  return `https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/${storageKey}`;
 }
 
 /* ── Componente para caso destacado dinámico (media desde API/uploads) ──────── */
@@ -190,8 +194,8 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-12 items-center">
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
-                  <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/cetis.mp4" type="video/mp4" />
+                  <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                    <source src={CETIS_VIDEO_URL} type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
@@ -224,8 +228,8 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-12 items-center">
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
-                  <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/entremaletas.mp4" type="video/mp4" />
+                  <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                    <source src={ENTREMALETAS_VIDEO_URL} type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
@@ -258,8 +262,8 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-12 items-center">
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
-                  <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/tiendadezapatos.mp4" type="video/mp4" />
+                  <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                    <source src={TIENDA_ZAPATOS_VIDEO_URL} type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
