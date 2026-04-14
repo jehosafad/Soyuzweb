@@ -24,6 +24,7 @@ const publicRoutes = require("./routes/publicRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
+const uploadsPublicDir = path.join(__dirname, "../uploads");
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
@@ -59,6 +60,7 @@ app.use("/uploads", express.static(UPLOADS_DIR, {
         }
     },
 }));
+app.use("/uploads", express.static(uploadsPublicDir));
 
 app.use("/api/contact", contactBurstLimiter, contactLimiter, contactRoutes);
 app.use("/api/auth", authRoutes);
