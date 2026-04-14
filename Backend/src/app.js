@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const path = require("path");
 
 const { corsOptions, helmetOptions, bodyLimit } = require("./config/security");
+const { UPLOADS_DIR } = require("./config/upload");
 const { httpLogger } = require("./middlewares/httpLogger");
 const { notFound } = require("./middlewares/notFound");
 const { errorHandler } = require("./middlewares/errorHandler");
@@ -44,6 +46,19 @@ app.get("/api/ready", ready);
 
 // Ping para UptimeRobot — mantiene Render despierto
 app.get("/ping", (req, res) => res.status(200).json({ status: "ok", uptime: process.uptime() }));
+
+// ── Servir archivos multimedia subidos (portafolio, entregables) ──────────────
+app.use("/uploads", express.static(UPLOADS_DIR, {
+    maxAge: "7d",
+    immutable: true,
+    setHeaders(res, filePath) {
+        const ext = path.extname(filePath).toLowerCase();
+        if ([".mp4", ".webm", ".ogg"].includes(ext)) {
+            res.setHeader("Content-Type", `video/${ext.slice(1)}`);
+            res.setHeader("Accept-Ranges", "bytes");
+        }
+    },
+}));
 
 app.use("/api/contact", contactBurstLimiter, contactLimiter, contactRoutes);
 app.use("/api/auth", authRoutes);

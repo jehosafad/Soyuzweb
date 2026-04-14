@@ -176,7 +176,7 @@ async function run() {
         'Ajuste visual adicional',
         'Cotización demo para modificaciones fuera de garantía/premium.',
         185000,
-        'MXN',
+        'USD',
         'pending',
         NOW(),
         NOW() + INTERVAL '15 days'

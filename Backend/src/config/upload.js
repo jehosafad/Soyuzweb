@@ -37,6 +37,14 @@ const ALLOWED_MIME_TYPES = new Set([
     "image/webp",
     "image/gif",
     "image/svg+xml",
+    // ── Video types para portafolio multimedia ──
+    "video/mp4",
+    "video/mpeg",
+    "video/webm",
+    "video/ogg",
+    "video/quicktime",
+    "video/x-msvideo",
+    "video/x-matroska",
 ]);
 
 const fileFilter = (_req, file, cb) => {
@@ -53,7 +61,7 @@ const upload = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: Number(process.env.MAX_FILE_SIZE_MB || 50) * 1024 * 1024,
+        fileSize: Number(process.env.MAX_FILE_SIZE_MB || 300) * 1024 * 1024,
         files: 1,
     },
 });

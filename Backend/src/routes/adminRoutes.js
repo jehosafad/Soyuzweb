@@ -645,6 +645,7 @@ router.get("/projects", async (req, res, next) => {
         p.is_public,
         p.is_featured,
         p.implementations,
+        p.portfolio_description,
         p.created_at,
         p.updated_at,
         latest.status AS latest_phase,
@@ -1147,7 +1148,7 @@ router.post("/quotes/from-support-request", async (req, res, next) => {
         const supportRequestId = Number.parseInt(req.body?.supportRequestId, 10);
         const title = String(req.body?.title || "").trim();
         const description = String(req.body?.description || "").trim();
-        const currency = String(req.body?.currency || "MXN").trim().toUpperCase();
+        const currency = String(req.body?.currency || "USD").trim().toUpperCase();
         const amountCents = Number.parseInt(req.body?.amountCents, 10);
         const expiresAtRaw = req.body?.expiresAt;
         const expiresAt =
