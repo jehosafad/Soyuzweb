@@ -568,7 +568,7 @@ export default function Portfolio() {
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
               <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/cetis.mp4" type="video/mp4" />
+                <source src="/uploads/cetis.mp4" type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">
@@ -591,7 +591,7 @@ export default function Portfolio() {
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
               <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/entremaletas.mp4" type="video/mp4" />
+                <source src="/uploads/entremaletas.mp4" type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">
@@ -614,7 +614,7 @@ export default function Portfolio() {
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
               <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/tiendadezapatos.mp4" type="video/mp4" />
+                <source src="/uploads/tiendadezapatos.mp4" type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">

@@ -191,7 +191,7 @@ export default function Home() {
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
                   <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/cetis.mp4" type="video/mp4" />
+                    <source src="/uploads/cetis.mp4" type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
@@ -225,7 +225,7 @@ export default function Home() {
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
                   <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/entremaletas.mp4" type="video/mp4" />
+                    <source src="/uploads/entremaletas.mp4" type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
@@ -259,7 +259,7 @@ export default function Home() {
               <div className="lg:col-span-7">
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-900 ring-1 ring-slate-200">
                   <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                    <source src="/tiendadezapatos.mp4" type="video/mp4" />
+                    <source src="/uploads/tiendadezapatos.mp4" type="video/mp4" />
                     Tu navegador no soporta video.
                   </video>
                 </div>
