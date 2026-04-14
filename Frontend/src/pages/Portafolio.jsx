@@ -4,11 +4,15 @@ import SectionHeading from "../components/SectionHeading";
 import BentoCard from "../components/BentoCard";
 import Button from "../components/Button";
 
+const CETIS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/cetis.mp4";
+const ENTREMALETAS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/entremaletas.mp4";
+const TIENDA_ZAPATOS_VIDEO_URL = "https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/tiendadezapatos.mp4";
+
 /* ── Helpers ──────────────────────────────────────────────────────────────────── */
 
 function mediaUrl(storageKey) {
   if (!storageKey) return null;
-  return `/uploads/${storageKey}`;
+  return `https://mpkenonwafhxwnuvoeiz.supabase.co/storage/v1/object/public/soyuz-media/${storageKey}`;
 }
 
 function toReadableServiceType(serviceType) {
@@ -567,8 +571,8 @@ export default function Portfolio() {
           {/* CETIS */}
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
-              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/uploads/cetis.mp4" type="video/mp4" />
+              <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src={CETIS_VIDEO_URL} type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">
@@ -590,8 +594,8 @@ export default function Portfolio() {
           {/* EntreMaletas */}
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
-              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/uploads/entremaletas.mp4" type="video/mp4" />
+              <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src={ENTREMALETAS_VIDEO_URL} type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">
@@ -613,8 +617,8 @@ export default function Portfolio() {
           {/* Tienda de Zapatos */}
           <div className="rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 overflow-hidden">
             <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 overflow-hidden">
-              <video className="h-full w-full" controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
-                <source src="/uploads/tiendadezapatos.mp4" type="video/mp4" />
+              <video className="h-full w-full" autoPlay muted loop controls preload="metadata" playsInline poster="/logo-soyuz.jpeg">
+                <source src={TIENDA_ZAPATOS_VIDEO_URL} type="video/mp4" />
               </video>
             </div>
             <div className="p-6 space-y-3">
