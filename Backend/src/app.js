@@ -22,6 +22,7 @@ const publicRoutes = require("./routes/publicRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 
 const app = express();
+const uploadsPublicDir = path.join(__dirname, "../uploads");
 
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
